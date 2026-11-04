@@ -26,11 +26,11 @@ h1::before,h1::after{content:'';flex:0 1 110px;height:1px;background:linear-grad
 #desc{margin:6px auto 12px;max-width:560px;font-size:clamp(16px,2.3vw,20px);line-height:1.4;min-height:2.8em}
 #tl{display:flex;gap:4px;max-width:640px;margin:0 auto}
 #tl button{padding:0;border:0;background:none;cursor:pointer;position:relative;height:26px}
-#tl button:focus-visible,#pl:focus-visible,#sn:focus-visible,#cw:focus-visible,#ph:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#tl button:focus-visible,#pl:focus-visible,#sn:focus-visible,#cw:focus-visible,#ph:focus-visible,#cm:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #tl i{position:absolute;left:0;right:0;top:11px;height:3px;background:rgba(232,191,106,.25);border-radius:2px;overflow:hidden}
 #tl b{display:block;height:100%;width:0;background:var(--gold)}
-#pl,#sn,#cw,#ph{margin:6px 4px 0;background:rgba(2,10,14,.35);border:1px solid rgba(232,191,106,.45);color:var(--ink);font:500 16px 'Cormorant Garamond',Georgia,serif;padding:5px 20px;border-radius:20px;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
-#pl:hover,#sn:hover,#cw:hover,#ph:hover{border-color:var(--gold);background:rgba(232,191,106,.12);color:var(--gold)}
+#pl,#sn,#cw,#ph,#cm{margin:6px 4px 0;background:rgba(2,10,14,.35);border:1px solid rgba(232,191,106,.45);color:var(--ink);font:500 16px 'Cormorant Garamond',Georgia,serif;padding:5px 20px;border-radius:20px;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
+#pl:hover,#sn:hover,#cw:hover,#ph:hover,#cm:hover{border-color:var(--gold);background:rgba(232,191,106,.12);color:var(--gold)}
 #help{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px)+12px);font-size:12px;color:var(--dim);opacity:.75;pointer-events:none;line-height:1.45;transition:opacity 1.2s ease;max-width:280px}
 #vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 38%,rgba(0,6,14,.48) 75%,rgba(0,3,10,.75) 100%),linear-gradient(180deg,rgba(20,60,70,.12),transparent 40%,rgba(5,20,25,.2));z-index:5}
 #grain{position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:6;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px}
@@ -58,7 +58,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
  #panel{padding:30px 10px calc(env(safe-area-inset-bottom,0px) + 8px)}
  #desc{display:none}#name{font-size:14px}
  #tl button{height:18px}#tl i{top:8px}
- #pl,#sn,#cw,#ph{padding:3px 11px;font-size:13px;margin:4px 3px 0}
+ #pl,#sn,#cw,#ph,#cm{padding:3px 11px;font-size:13px;margin:4px 3px 0}
 }
 @media (pointer:coarse) and (max-height:520px){
  #panel #name,#tl{display:none}#panel{padding-top:10px}
@@ -66,6 +66,12 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
  #joy{width:112px;height:112px}
  #found{top:14%}h1{font-size:16px}#top{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}#tip{top:22%}
 }
+#panel{display:none}body.story #panel{display:block}
+#menuPanel .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+#menuPanel .ctl button{margin:0;padding:11px 8px;border-radius:12px;font:500 15px 'Cormorant Garamond',Georgia,serif;letter-spacing:.05em;background:rgba(232,191,106,.05);border:1px solid rgba(232,191,106,.35);color:var(--ink);cursor:pointer}
+#menuPanel .ctl button:hover{background:rgba(232,191,106,.14)}
+#menuPanel .ctl button:first-child:nth-last-child(3){grid-column:1/-1}
+#menuPanel .page p.ctlLabel{margin:14px 0 8px;font:600 10px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 /* —— high-end navigation —— */
 #menuScrim{position:fixed;inset:0;background:rgba(1,8,12,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:8}
 #menuScrim.open{opacity:1;pointer-events:auto}
@@ -135,13 +141,21 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
     <p class="sub">Explore the depths</p>
   </div>
   <nav>
-    <button data-page="welcome" class="active">Welcome</button>
+    <button data-page="controls" class="active">Controls</button>
+    <button data-page="welcome">Welcome</button>
     <button data-page="map">Map</button>
     <button data-page="about">About</button>
     <button data-page="contact">Contact</button>
   </nav>
   <div id="menuBody">
-    <div id="page-welcome" class="page active">
+    <div id="page-controls" class="page active">
+      <h3>Controls</h3>
+      <p class="ctlLabel">Animation</p>
+      <div class="ctl"><button id="pl">Play animation</button><button id="dis">Disassemble</button><button id="rea">Reassemble</button></div>
+      <p class="ctlLabel">Camera and tools</p>
+      <div class="ctl"><button id="cm">Cam: Chase</button><button id="cw">Colors</button><button id="sn" aria-pressed="false">Sound</button><button id="ph">Photo</button></div>
+    </div>
+    <div id="page-welcome" class="page">
       <h3>Welcome</h3>
       <p>You are the <strong>Clockwork Octopus</strong> — a brass machine awakening in a living ocean of wrecks, ruins, and light.</p>
       <div class="keys">
@@ -152,7 +166,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
         <kbd>Mouse</kbd><span>Look</span>
         <kbd>H</kbd><span>Return home</span>
       </div>
-      <p>Moving pauses the disassemble sequence so you can explore freely. Open <strong>Map</strong> to orient yourself.</p>
+      <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p>
     </div>
     <div id="page-map" class="page">
       <h3>Chart</h3>
@@ -189,11 +203,11 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 <button data-k="KeyQ" aria-label="Swim up" style="grid-area:1/1">⬆</button>
 <button data-k="KeyE" aria-label="Swim down" style="grid-area:1/3">⬇</button>
 </div>
-<div id="panel"><h2 id="name"></h2><p id="desc"></p><div id="tl"></div><button id="pl" aria-label="Pause or play">Pause</button><button id="sn" aria-pressed="false">Sound</button><button id="cw">Colors</button><button id="ph">Photo</button></div>
+<div id="panel"><h2 id="name"></h2><p id="desc"></p><div id="tl"></div></div>
 <div id="joy" aria-label="Swim joystick"><div id="knob"></div></div>
 <div id="tb"><button id="bUp" aria-label="Rise">▲</button><button id="bDn" aria-label="Dive">▼</button><button id="bSp" aria-label="Boost">⚡</button></div>
-<div id="tip">Left stick: swim<br>Drag the sea: look · Pinch: zoom<br>▲ rise · ▼ dive · ⚡ boost</div>
-<div id="help">WASD / Arrows move · Q/E or Space/Ctrl up-down · Shift sprint · Mouse look · Scroll zoom · H home</div>
+<div id="tip">Left stick: swim and steer<br>Drag the sea: look · Pinch: zoom<br>▲ rise · ▼ dive · ⚡ boost</div>
+<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · H home</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (()=>{
@@ -708,7 +722,7 @@ function mantas(st){MN.forEach(m=>{const a=st*m.w+m.ph,P=m.pa,B=m.base;
  m.grp.position.set(px+Math.cos(a)*m.R,m.y+py*.2+Math.sin(st*.3+m.ph)*1.5,pz+Math.sin(a)*m.R);
  m.grp.rotation.y=m.w>0?-a:-a+PI;m.grp.rotation.z=Math.sin(st*.5+m.ph)*.12})}
 let shot=false,foundT=0;const foundEl=document.getElementById('found');
-document.getElementById('ph').onclick=()=>{shot=true};
+document.getElementById('ph').onclick=()=>{try{setMenuOpen(false)}catch(e){}setTimeout(()=>{shot=true},450)};
 function chimeFound(){try{if(typeof on==='undefined'||!on||!ac)return;[523,659,784,1047].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.11;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.1,n+.04);g.gain.exponentialRampToValueAtTime(.0001,n+2);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.1)})}catch(e){}}
 function showFound(lm){const all=landmarks.every(l=>l.seen);foundEl.querySelector('small').textContent=all?'The deep is charted':'Site discovered';foundEl.querySelector('b').textContent=all?'Every site found':lm.name;foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),4200);chimeFound()}
 function nextSite(){let b=null,d=1e9;landmarks.forEach(l=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l}}});if(!b)return 'All sites found';const ang=Math.atan2(b.x-px,-(b.z-pz)),dirs=['N','NE','E','SE','S','SW','W','NW'];return 'Next site: '+Math.round(d)+' m '+dirs[Math.round(((ang+PI*2)%(PI*2))/(PI/4))%8]}
@@ -745,19 +759,23 @@ const POI={tg:[]};
 function poi(st){POI.tg.forEach(o=>o.g.rotation.z=st*o.v);POI.lh.rotation.y=st*.6;POI.tface.material.opacity=.3+.12*Math.sin(st*.9);POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7)}
 // UI + camera + 3D controls
 const nameEl=document.getElementById('name'),descEl=document.getElementById('desc'),tl=document.getElementById('tl'),pl=document.getElementById('pl'),bars=[],bgEl=document.getElementById('bg');
-let t=0,st=0,wt=0,playing=true,cur=-1,az=.35,el=.04,zoom=1,drag=null,px=0,py=4.6,pz=0,vx=0,vy=0,vz=0,yw=0,wr=0,keys={};
+let t=0,st=0,wt=0,playing=false,cur=-1,az=.35,el=.04,zoom=1,drag=null,manual=false,manP=0,manTarget=0,lastE=0,camOff=0,chase=true,px=0,py=4.6,pz=0,vx=0,vy=0,vz=0,yw=0,wr=0,keys={};
 // smooth camera state
 let camAz=az,camEl=el,camZoom=zoom,camPx=px,camPy=py,camPz=pz;
-let userPaused=false,autoPaused=false,idleT=0;
+let userPaused=true,autoPaused=false,idleT=0;
 const qY=new Q();
 const helpEl=document.getElementById('help');
 let helpT=0;
-if(matchMedia('(prefers-reduced-motion: reduce)').matches){t=10;playing=false;userPaused=true;pl.textContent='Play'}
-S.forEach((s,i)=>{const b=document.createElement('button');b.setAttribute('aria-label',s[0]);b.style.flex=s[2];b.innerHTML='<i><b></b></i>';b.onclick=()=>{t=B[i]+.2};tl.appendChild(b);bars.push(b.firstChild.firstChild)});
+
+S.forEach((s,i)=>{const b=document.createElement('button');b.setAttribute('aria-label',s[0]);b.style.flex=s[2];b.innerHTML='<i><b></b></i>';b.onclick=()=>{manual=false;t=B[i]+.2};tl.appendChild(b);bars.push(b.firstChild.firstChild)});
+const closeMenu=()=>{try{setMenuOpen(false)}catch(e){}};
 const toggle=()=>{
-  if(playing){playing=false;userPaused=true;autoPaused=false;pl.textContent='Play'}
-  else{playing=true;userPaused=false;autoPaused=false;pl.textContent='Pause'}
+  if(playing){playing=false;userPaused=true;pl.textContent='Play animation'}
+  else{if(manual){manual=false;t=manP>.5?8.5:0}playing=true;userPaused=false;pl.textContent='Pause animation'}
+  closeMenu();
 };pl.onclick=toggle;
+const goManual=v=>{if(!manual){manual=true;manP=lastE}playing=false;userPaused=true;t=0;manTarget=v;pl.textContent='Play animation';closeMenu()};
+document.getElementById('dis').onclick=()=>goManual(1);document.getElementById('rea').onclick=()=>goManual(0);
 // minimap — top-down radar of landmarks
 const mmapC=document.getElementById('mmap'),mmapX=mmapC.getContext('2d');
 const MAP_R=90;
@@ -857,8 +875,8 @@ menuPanel.querySelectorAll('nav button').forEach(btn=>{
   });
 });
 const AK=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','Space','ControlLeft','ControlRight'];
-document.getElementById('cw').onclick=()=>applyPal((palIdx+1)%PAL.length);
-addEventListener('keydown',e=>{if(e.code==='KeyP'&&!e.repeat)shot=true;if(e.code==='KeyC'&&!e.repeat)applyPal((palIdx+1)%PAL.length);if(AK.includes(e.code)){keys[e.code]=true;e.preventDefault()}if(e.code==='ShiftLeft'||e.code==='ShiftRight')keys[e.code]=true;if(e.code==='KeyH'){px=pz=0;py=4.6;vx=vy=vz=0}});
+document.getElementById('cw').onclick=()=>{applyPal((palIdx+1)%PAL.length);try{setMenuOpen(false)}catch(e){}};
+addEventListener('keydown',e=>{if(e.code==='KeyP'&&!e.repeat)shot=true;if(e.code==='KeyV'&&!e.repeat)toggleCam();if(e.code==='KeyC'&&!e.repeat)applyPal((palIdx+1)%PAL.length);if(AK.includes(e.code)){keys[e.code]=true;e.preventDefault()}if(e.code==='ShiftLeft'||e.code==='ShiftRight')keys[e.code]=true;if(e.code==='KeyH'){px=pz=0;py=4.6;vx=vy=vz=0}});
 addEventListener('keyup',e=>{keys[e.code]=false});addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
 document.querySelectorAll('#dp button').forEach(b=>{const k=b.dataset.k,f=v=>e=>{keys[k]=v;e.preventDefault()};b.addEventListener('pointerdown',f(true));['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,f(false)))});
 let ac=null,on=false,mg,nf,ambG,whooshG,whooshF,tk=0,pt=0,bubT=0;const sb=document.getElementById('sn');
@@ -906,6 +924,7 @@ function audio(dt,E,spd){
   pt=t;
 }
 addEventListener('keydown',e=>{if(e.code==='Space'&&e.target===document.body){e.preventDefault()}}); // Space now used for up
+const camBtn=document.getElementById("cm");const toggleCam=()=>{chase=!chase;camBtn.textContent="Cam: "+(chase?"Chase":"Free")};camBtn.onclick=()=>{toggleCam();try{setMenuOpen(false)}catch(e){}};let startAlign=0,wasMove=false;
 const joy={x:0,y:0};let touchUp=0,touchDn=0,touchSprint=false;
 const ptrs=new Map();let pinch=0;const LK=COARSE?1.25:1;
 cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});cv.setPointerCapture(e.pointerId);if(ptrs.size===1)drag={x:e.clientX,y:e.clientY};else{drag=null;const[a,b]=[...ptrs.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}});
@@ -934,20 +953,32 @@ function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  // world time always advances; story timeline only when playing
  st+=dt;
- const E=t<4?0:t<8.5?sm((t-4)/4.5):t<14.5?1:t<19?1-sm((t-14.5)/4.5):0;
+ let E=t<4?0:t<8.5?sm((t-4)/4.5):t<14.5?1:t<19?1-sm((t-14.5)/4.5):0;
+ if(manual){manP+=Math.sign(manTarget-manP)*Math.min(Math.abs(manTarget-manP),dt/4.5);E=sm(manP)}
+ lastE=E;
  if(playing){t=(t+dt)%23;wt+=dt*(1-.7*E)}
- else{wt+=dt*.15} // slight residual arm drift when paused
+ else{wt+=dt*.7} // slight residual arm drift when paused
 
  // === IMPROVED 3D SWIMMING CONTROLS ===
  // Camera-relative horizontal + dedicated vertical + optional look-directed thrust
- const fx=-Math.sin(az),fz=-Math.cos(az);
  const ix=Math.max(-1,Math.min(1,(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+joy.x));
  const iz=Math.max(-1,Math.min(1,(keys.ArrowUp||keys.KeyW?1:0)-(keys.ArrowDown||keys.KeyS?1:0)+joy.y));
  const iy=Math.max(-1,Math.min(1,(keys.KeyQ||keys.Space?1:0)-(keys.KeyE||keys.ControlLeft||keys.ControlRight?1:0)+touchUp-touchDn));
 
  // horizontal movement relative to yaw (level plane — no accidental climb)
- let mx=fx*iz-fz*ix, mz=fz*iz+fx*ix;
- const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
+ const wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
+ let mx,mz;
+ if(chase){
+  // CHASE CAM: left/right steer the octopus, up/down swim forward/back along its heading
+  const sprint0=keys.ShiftLeft||keys.ShiftRight||touchSprint;
+  yw-=ix*(Math.abs(iz)<.05?2.4:(sprint0?1.9:1.5))*dt;
+  const thr=iz<0?iz*.55:iz;
+  mx=Math.sin(yw)*thr;mz=Math.cos(yw)*thr;
+ }else{
+  // FREE CAM: screen-relative movement (original behaviour)
+  const fx=-Math.sin(az),fz=-Math.cos(az);
+  mx=fx*iz-fz*ix;mz=fz*iz+fx*ix;const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
+ }
 
  // look-directed vertical ONLY when pitch is intentional (deadzone kills forward-climb drift)
  const pitchRaw=Math.sin(el);
@@ -978,13 +1009,6 @@ function frame(now){
 
  // auto-pause disassemble story when player swims; resume after brief idle
  const moving=spd>1.1||iy!==0||iz!==0||ix!==0;
- if(moving){
-  idleT=0;
-  if(playing&&!userPaused){playing=false;autoPaused=true;pl.textContent='Play'}
- }else{
-  idleT+=dt;
-  if(autoPaused&&!userPaused&&idleT>2.2){playing=true;autoPaused=false;pl.textContent='Pause'}
- }
 
  px+=vx*dt; py+=vy*dt; pz+=vz*dt;
 
@@ -993,7 +1017,15 @@ function frame(now){
  if(py>36){py=36;vy=Math.min(0,vy)}
  const pr=Math.hypot(px,pz);if(pr>28000){px*=28000/pr;pz*=28000/pr}
  wr+=spd*dt*7.5;
- if(spd>.25){let d=Math.atan2(vx,vz)-yw;d=Math.atan2(Math.sin(d),Math.cos(d));yw+=d*Math.min(1,dt*4.5)}
+ if(chase){
+  // camera swings round behind the octopus as it turns; dragging looks around, then it recentres
+  const steerMove=Math.abs(ix)>.02||Math.abs(iz)>.02;
+  if(steerMove&&!wasMove&&Math.abs(wrapA(az-(yw+PI)))>1.0)startAlign=.6;
+  wasMove=steerMove;
+  if(startAlign>0){startAlign-=dt;yw+=wrapA(az+PI-yw)*Math.min(1,dt*8);camOff=0}
+  else if(drag||(!steerMove&&spd<.5)){camOff=wrapA(az-(yw+PI))}
+  else{camOff*=Math.max(0,1-dt*.7);az+=wrapA(yw+PI+camOff-az)*Math.min(1,dt*7)}
+ }else if(spd>.25){let d=Math.atan2(vx,vz)-yw;d=Math.atan2(Math.sin(d),Math.cos(d));yw+=d*Math.min(1,dt*4.5)}
  qY.setFromAxisAngle(Y,yw);
 
  // body bob + swim pulse. bd.y carries ONLY the small animation bob (like the original).
@@ -1200,6 +1232,7 @@ function frame(now){
  // FOV: base + flare + subtle speed squeeze
  cam.fov=38+flare*4-Math.min(2.5,spd*.12);cam.updateProjectionMatrix();
  R.render(scene,cam);if(shot){shot=false;try{const a=document.createElement("a");a.download="clockwork-octopus.png";a.href=cv.toDataURL("image/png");a.click()}catch(e){}const f=document.getElementById("flash");f.style.transition="none";f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition="opacity .5s";f.style.opacity=0})}
+ document.body.classList.toggle('story',!manual&&(playing||t>.05));
  let si=0;while(si<4&&t>=B[si+1])si++;if(si!==cur){cur=si;nameEl.textContent=(si+1)+'. '+S[si][0];descEl.textContent=S[si][1]}
  bars.forEach((b,i)=>b.style.width=cl((t-B[i])/S[i][2])*100+'%');
  // adaptive quality — LOD by FPS
