@@ -72,6 +72,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 #menuPanel .ctl button:hover{background:rgba(232,191,106,.14)}
 #menuPanel .ctl button:first-child:nth-last-child(3){grid-column:1/-1}
 #menuPanel .page p.ctlLabel{margin:14px 0 8px;font:600 10px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+@media (pointer:fine){body>canvas{filter:contrast(1.05) saturate(1.1)}}
 /* —— high-end navigation —— */
 #menuScrim{position:fixed;inset:0;background:rgba(1,8,12,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:8}
 #menuScrim.open{opacity:1;pointer-events:auto}
@@ -220,6 +221,7 @@ const COARSE=matchMedia("(pointer:coarse)").matches;
 const R=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
 let quality=COARSE?1:2; // 2=high,1=med,0=low — adaptive
 R.setPixelRatio(Math.min(devicePixelRatio,quality===2?2:(COARSE?1.5:1)));
+if(!COARSE){R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap}
 R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
 let fpsEma=60,fpsCheck=0,beamBudget=14;
 document.body.insertBefore(R.domElement,document.getElementById('top'));
@@ -234,7 +236,11 @@ scene.environment=pm.fromScene(es,.04).texture}
 // hemisphere: pale green-blue sky / deep green-brown ground
 scene.add(new T.HemisphereLight(0x7ab0a8,0x0a1c18,.55));
 // sunlight filtered through water — cool, slightly green, not golden
-const sun=new T.DirectionalLight(0xb8d0c8,1.15);sun.position.set(5,18,8);scene.add(sun);
+const sun=new T.DirectionalLight(0xb8d0c8,1.15);sun.position.set(5,18,8);scene.add(sun,sun.target);
+if(!COARSE){sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);const sc=sun.shadow.camera;sc.left=-48;sc.right=48;sc.top=48;sc.bottom=-48;sc.near=5;sc.far=110;sun.shadow.bias=-.0006;sun.shadow.normalBias=.04;sun.shadow.radius=3}
+function markShadows(){if(COARSE)return;scene.traverse(o=>{if(!o.isMesh||o===sea)return;const m=o.material;if(!m||m.isMeshBasicMaterial||m.transparent||m.blending!==T.NormalBlending)return;o.castShadow=true});
+ sea.receiveShadow=true;[typeof rockIM!=='undefined'&&rockIM,typeof gearIM!=='undefined'&&gearIM,typeof coralIM!=='undefined'&&coralIM,typeof cogIM!=='undefined'&&cogIM].forEach(m=>{if(m)m.receiveShadow=true})}
+setTimeout(markShadows,1500);setTimeout(markShadows,6000);
 const rim=new T.DirectionalLight(0x3a7890,.85);rim.position.set(-8,7,-10);scene.add(rim);
 const fill=new T.DirectionalLight(0x1a4050,.35);fill.position.set(0,-4,2);scene.add(fill);
 const lamp=new T.SpotLight(0xa8d0d0,1.6,55,.5,.7);scene.add(lamp,lamp.target);
@@ -253,7 +259,8 @@ const white2=M(0xf5f0e6,.88,.22,0x12100c);white2.envMapIntensity=1.45;
 let warmEnv;{const pm2=new T.PMREMGenerator(R),es2=new T.Scene();es2.background=new T.Color(0x16100a);
 [[0xfff0d0,[8,10,4],[7,3,1]],[0xffb868,[-8,3,-5],[4,4,1]],[0xffffff,[0,12,0],[10,1,10]],[0xffa860,[-4,-2,8],[6,2,1]],[0x6aa8b8,[0,6,-10],[8,3,1]],[0xffe8c0,[6,2,9],[4,3,1]]].forEach(([c,p,s])=>{const m=new T.Mesh(new T.BoxGeometry(...s),new T.MeshBasicMaterial({color:new T.Color(c).multiplyScalar(2.6)}));m.position.set(...p);es2.add(m)});
 warmEnv=pm2.fromScene(es2,.04).texture}
-const oB=brass.clone(),oC=copper.clone(),oZ=bronze.clone(),oW=white2.clone();
+const mkP=src=>COARSE?src.clone():new T.MeshPhysicalMaterial({color:src.color.clone(),metalness:src.metalness,roughness:Math.max(.18,src.roughness*.8),emissive:src.emissive.clone(),emissiveIntensity:src.emissiveIntensity,clearcoat:.55,clearcoatRoughness:.22});
+const oB=mkP(brass),oC=mkP(copper),oZ=mkP(bronze),oW=mkP(white2);
 [oB,oC,oZ,oW].forEach(m=>{m.envMap=warmEnv;m.envMapIntensity=1.25});
 const PAL=[
  {n:'Antique brass',b:0xe2b050,c:0xd2723e,z:0x9c6834,w:0xfaf0dc,pc:[0xe6b85a,0xd4783f,0xc99c4a,0xaa763a],a:0xffd070,k:0xff7a2a,i:0xffb040,core:0xffa030},
@@ -272,7 +279,10 @@ x.strokeStyle='rgba(0,0,0,.09)';for(let i=0;i<50;i++){x.beginPath();const y=rnd(
 for(let i=0;i<400;i++){x.fillStyle=`rgba(${40+rnd()*40},${50+rnd()*40},${45+rnd()*30},${.15+rnd()*.25})`;x.beginPath();x.arc(rnd()*512,rnd()*512,.5+rnd()*2,0,7);x.fill()}}
 const stx=new T.CanvasTexture(sc2);stx.wrapS=stx.wrapT=T.RepeatWrapping;stx.repeat.set(52,52);
 // seabed: muted olive-sand, not bright teal
-const sea=new T.Mesh(new T.CircleGeometry(240,96),new T.MeshStandardMaterial({map:stx,color:0x2a4a40,roughness:.95,metalness:0,envMapIntensity:.2}));sea.rotation.x=-PI/2;scene.add(sea);
+const sea=new T.Mesh(new T.CircleGeometry(240,96),new T.MeshStandardMaterial({map:stx,color:0x2a4a40,roughness:.95,metalness:0,envMapIntensity:.2}));sea.rotation.x=-PI/2;scene.add(sea);sea.material.bumpMap=stx;sea.material.bumpScale=2.4;
+const blobC=document.createElement('canvas');blobC.width=blobC.height=128;{const x=blobC.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(0,0,0,.9)');g.addColorStop(.55,'rgba(0,0,0,.35)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,128,128)}
+const blob=new T.Mesh(new T.CircleGeometry(1,32),new T.MeshBasicMaterial({map:new T.CanvasTexture(blobC),transparent:true,opacity:0,depthWrite:false}));blob.rotation.x=-PI/2;scene.add(blob);
+const sunG=new T.Sprite(new T.SpriteMaterial({map:white,color:0xcff4ff,blending:T.AdditiveBlending,transparent:true,depthWrite:false,fog:false,opacity:.6}));sunG.scale.set(170,170,1);scene.add(sunG);
 
 // rocks: muted grey-green / brown-green (real reef rock)
 const rk=M(0x2a3a35,.06,.9,0x000000);
@@ -581,6 +591,7 @@ for(let i=0;i<140;i++){x.beginPath();const cx=rnd()*512,cy=rnd()*512,r=8+rnd()*3
 x.strokeStyle='rgba(210,250,255,.22)';x.lineWidth=1.1;
 for(let i=0;i<80;i++){x.beginPath();const cx=rnd()*512,cy=rnd()*512,r=5+rnd()*22;for(let a=0;a<=6.5;a+=.35){const rr=r*(.68+.32*Math.sin(a*2.6+i));x[a?'lineTo':'moveTo'](cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath();x.stroke()}}
 const ct=new T.CanvasTexture(cc);ct.wrapS=ct.wrapT=T.RepeatWrapping;ct.repeat.set(11,11);
+const surf=new T.Mesh(new T.PlaneGeometry(520,520),new T.MeshBasicMaterial({map:ct,color:0x9ee8ff,transparent:true,opacity:.2,blending:T.AdditiveBlending,depthWrite:false,fog:false,side:T.DoubleSide}));surf.rotation.x=Math.PI/2;scene.add(surf);
 const caus=new T.Mesh(new T.CircleGeometry(70,64),new T.MeshBasicMaterial({map:ct,transparent:true,opacity:.42,blending:T.AdditiveBlending,depthWrite:false}));caus.rotation.x=-PI/2;caus.position.y=.035;scene.add(caus);
 // second slower caustic layer for depth
 const caus2=new T.Mesh(new T.CircleGeometry(70,64),new T.MeshBasicMaterial({map:ct,transparent:true,opacity:.18,blending:T.AdditiveBlending,depthWrite:false}));caus2.rotation.x=-PI/2;caus2.position.y=.04;caus2.rotation.z=.4;scene.add(caus2);
@@ -1103,7 +1114,7 @@ function frame(now){
  ruin.forEach(r=>r.m.rotation.z+=dt*r.v);
  plk.rotation.y+=dt*.01;plk.position.set(px,0,pz);
  bub.position.set(px,0,pz);
- sea.position.set(px,0,pz);stx.offset.set(px/10,-pz/10);
+ sea.position.set(px,0,pz);stx.offset.set(px/10,-pz/10);sun.target.position.set(px,0,pz);sun.position.set(px+14,50,pz+22);blob.position.set(px,.05,pz);const alt=Math.max(0,py),dT=cl((py-2)/32);blob.scale.setScalar(5+alt*.35);blob.material.opacity=COARSE?Math.max(0,.55-alt*.02):0;surf.position.set(px,62,pz);surf.material.opacity=.25*(1-dT);sunG.position.set(px+70,95,pz+100);sunG.material.opacity=.7*(1-dT);
  const wc2=Math.floor(px/CS),wz2=Math.floor(pz/CS);if(wc2!==wcx||wz2!==wcz){wcx=wc2;wcz=wz2;rebuild(wcx,wcz)}world(st);ext(st);
  // sharks — smooth patrol with body roll and fin animation
  sharks.forEach((s,si)=>{
@@ -1239,8 +1250,8 @@ function frame(now){
  const fps=dt>0?1/dt:60;fpsEma=fpsEma*.9+fps*.1;fpsCheck+=dt;
  if(fpsCheck>1.2){
   fpsCheck=0;
-  if(fpsEma<28&&quality>0){quality--;R.setPixelRatio(Math.min(devicePixelRatio,quality===0?1:1.25));beamBudget=quality===0?6:10;bub.visible=quality>0;plk2.visible=quality>0}
-  else if(fpsEma>50&&quality<2){quality++;R.setPixelRatio(Math.min(devicePixelRatio,quality===2?2:1.25));beamBudget=quality===2?14:10;bub.visible=true;plk2.visible=quality>0}
+  if(fpsEma<28&&quality>0){quality--;if(quality===0)sun.castShadow=false;R.setPixelRatio(Math.min(devicePixelRatio,quality===0?1:1.25));beamBudget=quality===0?6:10;bub.visible=quality>0;plk2.visible=quality>0}
+  else if(fpsEma>50&&quality<2){quality++;if(!COARSE)sun.castShadow=true;R.setPixelRatio(Math.min(devicePixelRatio,quality===2?2:1.25));beamBudget=quality===2?14:10;bub.visible=true;plk2.visible=quality>0}
  }
  requestAnimationFrame(frame)}
 const Xl=mk(loose.length);

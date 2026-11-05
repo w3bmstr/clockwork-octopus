@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#031820">
+<title>Clockwork Octopus</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap">
+<style>
+:root{color-scheme:dark;--gold:#e8bf6a;--ink:#e9f4f2;--dim:#8fb7b8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:#041a24;color:var(--ink);font-family:'Cormorant Garamond',Georgia,serif;overflow:hidden}
+#bg,body>canvas{position:fixed;inset:0;width:100%;height:100%}
+#bg{background:linear-gradient(#0a4a5c,#042830 50%,#021018)}
+body>canvas{touch-action:none;cursor:grab}
+#top{position:fixed;top:0;left:0;right:0;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px 0;pointer-events:none;text-shadow:0 2px 18px rgba(0,0,0,.7)}
+h1{margin:0;font:600 clamp(24px,5vw,46px)/1.1 'Cinzel','Trajan Pro',Georgia,serif;letter-spacing:.16em;color:var(--gold);display:flex;align-items:center;justify-content:center;gap:20px}
+h1::before,h1::after{content:'';flex:0 1 110px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}h1::after{transform:scaleX(-1)}
+#dp{display:none;position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);grid-template:repeat(3,42px)/repeat(3,42px);gap:4px}
+@media (pointer:coarse){#dp{display:grid}}
+#dp button{touch-action:none;background:rgba(2,10,14,.55);border:1px solid rgba(232,191,106,.5);color:var(--ink);border-radius:10px;font-size:16px}
+#hud{margin-top:2px;font-size:14px;letter-spacing:.14em;color:var(--dim)}
+#cnt{margin-top:6px;font-size:clamp(14px,2vw,18px);font-style:italic;color:var(--dim)}
+#panel{position:fixed;left:0;right:0;bottom:0;padding:70px 16px calc(env(safe-area-inset-bottom,0px) + 16px);text-align:center;background:linear-gradient(transparent,rgba(2,10,14,.8) 60%);text-shadow:0 1px 12px #000}
+#name{font:600 clamp(20px,3.4vw,28px)/1.2 'Cinzel',Georgia,serif;letter-spacing:.1em;color:var(--gold);margin:0}
+#desc{margin:6px auto 12px;max-width:560px;font-size:clamp(16px,2.3vw,20px);line-height:1.4;min-height:2.8em}
+#tl{display:flex;gap:4px;max-width:640px;margin:0 auto}
+#tl button{padding:0;border:0;background:none;cursor:pointer;position:relative;height:26px}
+#tl button:focus-visible,#pl:focus-visible,#sn:focus-visible,#cw:focus-visible,#ph:focus-visible,#cm:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#tl i{position:absolute;left:0;right:0;top:11px;height:3px;background:rgba(232,191,106,.25);border-radius:2px;overflow:hidden}
+#tl b{display:block;height:100%;width:0;background:var(--gold)}
+#pl,#sn,#cw,#ph,#cm{margin:6px 4px 0;background:rgba(2,10,14,.35);border:1px solid rgba(232,191,106,.45);color:var(--ink);font:500 16px 'Cormorant Garamond',Georgia,serif;padding:5px 20px;border-radius:20px;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
+#pl:hover,#sn:hover,#cw:hover,#ph:hover,#cm:hover{border-color:var(--gold);background:rgba(232,191,106,.12);color:var(--gold)}
+#help{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px)+12px);font-size:12px;color:var(--dim);opacity:.75;pointer-events:none;line-height:1.45;transition:opacity 1.2s ease;max-width:280px}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 38%,rgba(0,6,14,.48) 75%,rgba(0,3,10,.75) 100%),linear-gradient(180deg,rgba(20,60,70,.12),transparent 40%,rgba(5,20,25,.2));z-index:5}
+#grain{position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:6;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px}
+#dp button{transition:background .15s,border-color .15s}
+#dp button:active{background:rgba(232,191,106,.25);border-color:var(--gold)}
+#top,#panel,#help,#dp{z-index:7}
+#found{position:fixed;left:50%;top:22%;transform:translate(-50%,-10px);text-align:center;opacity:0;pointer-events:none;transition:opacity .6s,transform .6s;z-index:9;text-shadow:0 2px 24px #000}
+#found.show{opacity:1;transform:translate(-50%,0)}
+#found small{display:block;font:500 11px system-ui,sans-serif;letter-spacing:.4em;color:var(--dim);text-transform:uppercase}
+#found b{display:block;margin-top:8px;font:600 clamp(24px,4vw,40px)/1.1 'Cinzel',Georgia,serif;letter-spacing:.12em;color:var(--gold)}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20;transition:opacity .5s}
+html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#joy,#tb{display:none;position:fixed;z-index:6;touch-action:none}
+#joy{left:calc(env(safe-area-inset-left,0px) + 18px);bottom:calc(env(safe-area-inset-bottom,0px) + 128px);width:132px;height:132px;border-radius:50%;background:rgba(2,10,14,.42);border:1px solid rgba(232,191,106,.45);box-shadow:inset 0 0 24px rgba(232,191,106,.08)}
+#joy::before{content:'';position:absolute;inset:34px;border-radius:50%;border:1px dashed rgba(232,191,106,.25)}
+#knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f6dc9a,#c7973c 60%,#8a6322);box-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none}
+#tb{right:calc(env(safe-area-inset-right,0px) + 18px);bottom:calc(env(safe-area-inset-bottom,0px) + 128px);flex-direction:column;gap:10px}
+#tb button{width:58px;height:58px;border-radius:50%;background:rgba(2,10,14,.5);border:1px solid rgba(232,191,106,.5);color:var(--ink);font:22px system-ui,sans-serif;touch-action:none;padding:0;display:flex;align-items:center;justify-content:center}
+#tb button.on{background:rgba(232,191,106,.35);border-color:#e8bf6a}
+#tip{display:none;position:fixed;left:50%;top:34%;transform:translateX(-50%);width:min(82vw,340px);text-align:center;font:500 15px/1.55 system-ui,sans-serif;color:var(--ink);background:rgba(2,10,14,.66);border:1px solid rgba(232,191,106,.4);border-radius:14px;padding:12px 16px;z-index:12;transition:opacity .8s;pointer-events:none}
+@media (pointer:coarse){
+ #joy{display:block}#tb{display:flex}#dp,#help,#cnt,.st{display:none}
+ h1{font-size:20px;letter-spacing:.12em}h1::before,h1::after{flex-basis:30px}
+ #hud{font-size:11px;letter-spacing:.06em}
+ #panel{padding:30px 10px calc(env(safe-area-inset-bottom,0px) + 8px)}
+ #desc{display:none}#name{font-size:14px}
+ #tl button{height:18px}#tl i{top:8px}
+ #pl,#sn,#cw,#ph,#cm{padding:3px 11px;font-size:13px;margin:4px 3px 0}
+}
+@media (pointer:coarse) and (max-height:520px){
+ #panel #name,#tl{display:none}#panel{padding-top:10px}
+ #joy,#tb{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
+ #joy{width:112px;height:112px}
+ #found{top:14%}h1{font-size:16px}#top{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}#tip{top:22%}
+}
+#panel{display:none}body.story #panel{display:block}
+#menuPanel .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+#menuPanel .ctl button{margin:0;padding:11px 8px;border-radius:12px;font:500 15px 'Cormorant Garamond',Georgia,serif;letter-spacing:.05em;background:rgba(232,191,106,.05);border:1px solid rgba(232,191,106,.35);color:var(--ink);cursor:pointer}
+#menuPanel .ctl button:hover{background:rgba(232,191,106,.14)}
+#menuPanel .ctl button:first-child:nth-last-child(3){grid-column:1/-1}
+#menuPanel .page p.ctlLabel{margin:14px 0 8px;font:600 10px/1 system-ui,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+/* —— high-end navigation —— */
+#menuScrim{position:fixed;inset:0;background:rgba(1,8,12,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:8}
+#menuScrim.open{opacity:1;pointer-events:auto}
+#menuBtn{position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);right:16px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(232,191,106,.35);background:linear-gradient(145deg,rgba(12,28,36,.9),rgba(4,14,20,.95));box-shadow:0 4px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(232,191,106,.12);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:0;pointer-events:auto;z-index:11;transition:border-color .25s,box-shadow .25s,transform .25s}
+#menuBtn:hover{border-color:rgba(232,191,106,.7);box-shadow:0 6px 28px rgba(0,0,0,.5),0 0 20px rgba(232,191,106,.08)}
+#menuBtn:active{transform:scale(.96)}
+#menuBtn span{display:block;width:16px;height:1.5px;background:var(--gold);border-radius:1px;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .2s}
+#menuBtn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+#menuBtn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+#menuBtn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+#menuPanel{position:fixed;top:0;right:0;width:min(380px,94vw);height:100%;background:linear-gradient(165deg,rgba(6,18,26,.97) 0%,rgba(3,12,18,.98) 100%);border-left:1px solid rgba(232,191,106,.18);box-shadow:-16px 0 48px rgba(0,0,0,.55);transform:translateX(105%);transition:transform .4s cubic-bezier(.22,1,.36,1);pointer-events:auto;z-index:10;display:flex;flex-direction:column;overflow:hidden}
+#menuPanel.open{transform:translateX(0)}
+#menuPanel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,191,106,.4),transparent)}
+#menuHead{flex-shrink:0;padding:calc(env(safe-area-inset-top,0px)+28px) 28px 16px}
+#menuHead .eyebrow{font:500 10px/1 system-ui,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:rgba(232,191,106,.55);margin:0 0 8px}
+#menuHead h2{margin:0;font:600 22px/1.15 'Cinzel',Georgia,serif;letter-spacing:.14em;color:var(--gold)}
+#menuHead .sub{margin:8px 0 0;font:italic 14px/1.4 'Cormorant Garamond',Georgia,serif;color:var(--dim)}
+#menuPanel nav{flex-shrink:0;display:flex;flex-direction:column;padding:8px 16px 12px;gap:2px;border-bottom:1px solid rgba(232,191,106,.12)}
+#menuPanel nav button{position:relative;text-align:left;background:transparent;border:0;color:rgba(233,244,242,.5);font:500 14px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase;padding:12px 16px;border-radius:6px;cursor:pointer;transition:color .2s,background .2s}
+#menuPanel nav button::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%) scaleY(0);width:2px;height:55%;background:var(--gold);border-radius:1px;transition:transform .25s cubic-bezier(.22,1,.36,1)}
+#menuPanel nav button:hover{color:rgba(233,244,242,.9);background:rgba(232,191,106,.04)}
+#menuPanel nav button.active{color:var(--gold);background:rgba(232,191,106,.07)}
+#menuPanel nav button.active::before{transform:translateY(-50%) scaleY(1)}
+#menuBody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 28px 20px;scrollbar-width:thin;scrollbar-color:rgba(232,191,106,.25) transparent}
+#menuFoot{flex-shrink:0}
+#menuPanel .page{display:none}
+#menuPanel .page.active{display:block}
+#mapDock{flex-shrink:0;display:none;flex-direction:column;align-items:center;padding:12px 20px 8px;border-top:1px solid rgba(232,191,106,.12);background:rgba(2,10,16,.5)}
+#mapDock.open{display:flex}
+#mapDock .mapDockTitle{font:600 11px/1 'Cinzel',Georgia,serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:0 0 8px;align-self:flex-start}
+#mapDock #mapProgress{margin-bottom:8px}
+#menuPanel .page h3{font:600 13px/1 'Cinzel',Georgia,serif;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:12px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(232,191,106,.12)}
+#menuPanel .page p{margin:0 0 12px;font:15px/1.65 'Cormorant Garamond',Georgia,serif;color:rgba(233,244,242,.72)}
+#menuPanel .page p strong,#menuPanel .page b{color:var(--ink);font-weight:500}
+#menuPanel .page a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(232,191,106,.3);transition:border-color .2s}
+#menuPanel .page a:hover{border-color:var(--gold)}
+#menuPanel .keys{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:14px 0;font:13px/1.4 system-ui,sans-serif;color:var(--dim)}
+#menuPanel .keys kbd{display:inline-block;min-width:1.6em;padding:3px 7px;border-radius:4px;border:1px solid rgba(232,191,106,.3);background:rgba(232,191,106,.06);color:var(--gold);font:500 11px/1 system-ui,sans-serif;text-align:center;letter-spacing:.04em}
+#mapWrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:4px}
+#mapWrap canvas{position:static;inset:auto;display:block;width:168px;height:168px;border-radius:50%;border:1px solid rgba(232,191,106,.28);background:radial-gradient(circle at 40% 35%,rgba(20,50,60,.5),rgba(2,12,18,.95));box-shadow:0 6px 24px rgba(0,0,0,.4),inset 0 0 32px rgba(0,30,40,.3)}
+#mapProgress{width:100%;font:12px/1.4 system-ui,sans-serif;color:var(--dim);margin:0 0 4px}
+#mapProgress b{color:var(--gold);font-weight:600}
+#mapProgress .bar{height:3px;background:rgba(232,191,106,.12);border-radius:2px;margin-top:6px;overflow:hidden}
+#mapProgress .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,rgba(232,191,106,.7),var(--gold));border-radius:2px;transition:width .4s ease}
+#mapLegend{font:11px/1.7 system-ui,sans-serif;color:var(--dim);width:100%;display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+#mapLegend span.seen{display:none}
+#mapLegend div{display:flex;align-items:center;gap:8px}
+#mapLegend span.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+#mapLegend span.seen{margin-left:auto;font-size:10px;letter-spacing:.06em;color:rgba(232,191,106,.45)}
+#mapLegend div.visited span.seen{color:var(--gold)}
+#mapLegend div.visited{color:rgba(233,244,242,.85)}
+#menuFoot{padding:14px 28px calc(env(safe-area-inset-bottom,0px)+16px);border-top:1px solid rgba(232,191,106,.1);font:11px/1.4 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:rgba(143,183,184,.4)}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="vignette"></div>
+<div id="grain"></div>
+<div id="top"><h1>Clockwork Octopus</h1><div id="cnt"></div><div id="hud"></div></div>
+<div id="found"><small></small><b></b></div><div id="flash"></div>
+<div id="menuScrim"></div>
+<button id="menuBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+<div id="menuPanel" role="dialog" aria-label="Navigation">
+  <div id="menuHead">
+    <p class="eyebrow">Navigation</p>
+    <h2>Clockwork</h2>
+    <p class="sub">Explore the depths</p>
+  </div>
+  <nav>
+    <button data-page="controls" class="active">Controls</button>
+    <button data-page="welcome">Welcome</button>
+    <button data-page="map">Map</button>
+    <button data-page="about">About</button>
+    <button data-page="contact">Contact</button>
+  </nav>
+  <div id="menuBody">
+    <div id="page-controls" class="page active">
+      <h3>Controls</h3>
+      <p class="ctlLabel">Animation</p>
+      <div class="ctl"><button id="pl">Play animation</button><button id="dis">Disassemble</button><button id="rea">Reassemble</button></div>
+      <p class="ctlLabel">Camera and tools</p>
+      <div class="ctl"><button id="cm">Cam: Chase</button><button id="cw">Colors</button><button id="sn" aria-pressed="false">Sound</button><button id="ph">Photo</button></div>
+    </div>
+    <div id="page-welcome" class="page">
+      <h3>Welcome</h3>
+      <p>You are the <strong>Clockwork Octopus</strong> — a brass machine awakening in a living ocean of wrecks, ruins, and light.</p>
+      <div class="keys">
+        <kbd>WASD</kbd><span>Swim</span>
+        <kbd>Q</kbd><span>Rise</span>
+        <kbd>E</kbd><span>Dive</span>
+        <kbd>⇧</kbd><span>Sprint</span>
+        <kbd>Mouse</kbd><span>Look</span>
+        <kbd>H</kbd><span>Return home</span>
+      </div>
+      <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p>
+    </div>
+    <div id="page-map" class="page">
+      <h3>Chart</h3>
+      <p>Swim near sites to discover them. The live chart sits at the bottom of this panel.</p>
+      <p>Gold arrow is you. Unvisited sites show as ??? until you get close.</p>
+    </div>
+    <div id="page-about" class="page">
+      <h3>About</h3>
+      <p>A self-contained interactive piece built with Three.js — one file, no install, pure browser.</p>
+      <p>Coral reefs, giant kelp, shipwrecks, bioluminescence, and a clockwork cephalopod that can come apart and return to form.</p>
+      <p>Designed for desktop; touch controls appear on mobile.</p>
+    </div>
+    <div id="page-contact" class="page">
+      <h3>Contact</h3>
+      <p>Questions, feedback, or collaboration.</p>
+      <p><a href="mailto:2026websites@gmail.com">2026websites@gmail.com</a></p>
+    </div>
+  </div>
+  <div id="mapDock">
+    <p class="mapDockTitle">Live chart</p>
+    <div id="mapProgress"><span id="mapCount">Discovered <b>0</b> / 0</span><div class="bar"><i id="mapBar"></i></div></div>
+    <div id="mapWrap">
+      <canvas id="mmap" width="168" height="168"></canvas>
+      <div id="mapLegend"></div>
+    </div>
+  </div>
+  <div id="menuFoot">Clockwork Octopus</div>
+</div>
+<div id="dp">
+<button data-k="ArrowUp" aria-label="Swim forward" style="grid-area:1/2">▲</button>
+<button data-k="ArrowLeft" aria-label="Swim left" style="grid-area:2/1">◀</button>
+<button data-k="ArrowDown" aria-label="Swim back" style="grid-area:2/2">▼</button>
+<button data-k="ArrowRight" aria-label="Swim right" style="grid-area:2/3">▶</button>
+<button data-k="KeyQ" aria-label="Swim up" style="grid-area:1/1">⬆</button>
+<button data-k="KeyE" aria-label="Swim down" style="grid-area:1/3">⬇</button>
+</div>
+<div id="panel"><h2 id="name"></h2><p id="desc"></p><div id="tl"></div></div>
+<div id="joy" aria-label="Swim joystick"><div id="knob"></div></div>
+<div id="tb"><button id="bUp" aria-label="Rise">▲</button><button id="bDn" aria-label="Dive">▼</button><button id="bSp" aria-label="Boost">⚡</button></div>
+<div id="tip">Left stick: swim and steer<br>Drag the sea: look · Pinch: zoom<br>▲ rise · ▼ dive · ⚡ boost</div>
+<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · H home</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(()=>{
+const S=[["Idle swim","Eight clockwork arms ripple through the water.",4],["Disassemble","Every plate, ring, gear and cup drifts free of its place.",4.5],["Inspect","The parts hang in the water while the view turns a full circle.",6],["Reassemble","Each piece finds its way home and the arms lock back together.",4.5],["Awake","The eyes flare and the octopus swims on.",4]];
+const B=[0,4,8.5,14.5,19,23];
+const T=THREE,V=T.Vector3,Q=T.Quaternion,PI=Math.PI;
+let sd=5;const rnd=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646};
+const cl=x=>Math.min(1,Math.max(0,x)),sm=x=>{x=cl(x);return x*x*(3-2*x)};
+const COARSE=matchMedia("(pointer:coarse)").matches;
+const R=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+let quality=COARSE?1:2; // 2=high,1=med,0=low — adaptive
+R.setPixelRatio(Math.min(devicePixelRatio,quality===2?2:(COARSE?1.5:1)));
+R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
+let fpsEma=60,fpsCheck=0,beamBudget=14;
+document.body.insertBefore(R.domElement,document.getElementById('top'));
+const cv=R.domElement,scene=new T.Scene(),cam=new T.PerspectiveCamera(38,1,.1,300);
+// Real-world cinematic underwater: muted teal-green shallow → deep navy
+scene.fog=new T.FogExp2(0x0a3a42,.0095);
+const fogCol=new T.Color(0x0a3a42),fogDeep=new T.Color(0x031820),fogShallow=new T.Color(0x1a5a58);
+{const pm=new T.PMREMGenerator(R),es=new T.Scene();es.background=new T.Color(0x051418);
+// cooler, greener ambient probes — less tropical cyan, more oceanic
+[[0xc8d8c0,[8,10,4],[6,3,1]],[0x4a90a0,[-8,3,-5],[4,4,1]],[0xa0b8b0,[0,12,0],[10,1,10]],[0x6a8070,[-4,-2,8],[5,2,1]],[0x2a6080,[0,6,-10],[8,4,1]]].forEach(([c,p,s])=>{const m=new T.Mesh(new T.BoxGeometry(...s),new T.MeshBasicMaterial({color:new T.Color(c).multiplyScalar(2.2)}));m.position.set(...p);es.add(m)});
+scene.environment=pm.fromScene(es,.04).texture}
+// hemisphere: pale green-blue sky / deep green-brown ground
+scene.add(new T.HemisphereLight(0x7ab0a8,0x0a1c18,.55));
+// sunlight filtered through water — cool, slightly green, not golden
+const sun=new T.DirectionalLight(0xb8d0c8,1.15);sun.position.set(5,18,8);scene.add(sun);
+const rim=new T.DirectionalLight(0x3a7890,.85);rim.position.set(-8,7,-10);scene.add(rim);
+const fill=new T.DirectionalLight(0x1a4050,.35);fill.position.set(0,-4,2);scene.add(fill);
+const lamp=new T.SpotLight(0xa8d0d0,1.6,55,.5,.7);scene.add(lamp,lamp.target);
+const coreL=new T.PointLight(0xe09040,1.5,18);scene.add(coreL);
+function glowTex(rgb){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,`rgba(${rgb},1)`);g.addColorStop(.25,`rgba(${rgb},.5)`);g.addColorStop(.55,`rgba(${rgb},.12)`);g.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=g;x.fillRect(0,0,128,128);return new T.CanvasTexture(c)}
+const warm=glowTex('255,190,100'),white=glowTex('255,255,255'),cyan=glowTex('120,230,255');
+
+function gearGeo(teeth,r,depth){const s=new T.Shape(),n=teeth*4;for(let i=0;i<n;i++){const a=i/n*PI*2,k=i%4,rr=(k==1||k==2)?r*1.18:r;s[i?'lineTo':'moveTo'](Math.cos(a)*rr,Math.sin(a)*rr)}const h=new T.Path();h.absarc(0,0,r*.11,0,PI*2,true);s.holes.push(h);for(let j=0;j<6;j++){const a=j/6*PI*2,q=new T.Path();q.absarc(Math.cos(a)*r*.56,Math.sin(a)*r*.56,r*.15,0,PI*2,true);s.holes.push(q)}const g=new T.ExtrudeGeometry(s,{depth,bevelEnabled:false});g.translate(0,0,-depth/2);return g}
+const M=(c,m,r,e)=>new T.MeshStandardMaterial({color:c,metalness:m,roughness:r,emissive:e||0x080604,envMapIntensity:1.35});
+// close-up quality metals: slightly varied roughness, stronger env response
+const brass=M(0xd8a84c,.9,.24,0x1a1006);brass.envMapIntensity=1.5;
+const copper=M(0xc46e3e,.86,.28,0x180c06);copper.envMapIntensity=1.4;
+const bronze=M(0x8e5e30,.84,.34,0x120a04);bronze.envMapIntensity=1.3;
+const white2=M(0xf5f0e6,.88,.22,0x12100c);white2.envMapIntensity=1.45;
+// --- octopus-only metals with a WARM studio environment (the scene env is cool teal and turned gold olive/muddy)
+let warmEnv;{const pm2=new T.PMREMGenerator(R),es2=new T.Scene();es2.background=new T.Color(0x16100a);
+[[0xfff0d0,[8,10,4],[7,3,1]],[0xffb868,[-8,3,-5],[4,4,1]],[0xffffff,[0,12,0],[10,1,10]],[0xffa860,[-4,-2,8],[6,2,1]],[0x6aa8b8,[0,6,-10],[8,3,1]],[0xffe8c0,[6,2,9],[4,3,1]]].forEach(([c,p,s])=>{const m=new T.Mesh(new T.BoxGeometry(...s),new T.MeshBasicMaterial({color:new T.Color(c).multiplyScalar(2.6)}));m.position.set(...p);es2.add(m)});
+warmEnv=pm2.fromScene(es2,.04).texture}
+const oB=brass.clone(),oC=copper.clone(),oZ=bronze.clone(),oW=white2.clone();
+[oB,oC,oZ,oW].forEach(m=>{m.envMap=warmEnv;m.envMapIntensity=1.25});
+const PAL=[
+ {n:'Antique brass',b:0xe2b050,c:0xd2723e,z:0x9c6834,w:0xfaf0dc,pc:[0xe6b85a,0xd4783f,0xc99c4a,0xaa763a],a:0xffd070,k:0xff7a2a,i:0xffb040,core:0xffa030},
+ {n:'Silver and aqua',b:0xcdd8e0,c:0x93acbc,z:0x5e7486,w:0xf0f6fa,pc:[0xdbe6ee,0xb2c3d0,0x93aab9,0xc8d4dc],a:0x60f0ff,k:0x7aa8ff,i:0x60e0ff,core:0x50d8ff},
+ {n:'Rose gold and pearl',b:0xeab8a2,c:0xcc8470,z:0x9c6658,w:0xfaeee8,pc:[0xefc6b4,0xdb9783,0xf4d6c8,0xc08474],a:0xffb4cc,k:0xff7aa2,i:0xff9ab8,core:0xff8aa8}];
+let palIdx=0;
+
+// === RICHER SEABED ===
+const sc2=document.createElement('canvas');sc2.width=sc2.height=512;
+{const x=sc2.getContext('2d');
+x.fillStyle='#5a8a8a';x.fillRect(0,0,512,512);
+for(let i=0;i<1800;i++){const v=rnd();x.fillStyle=`rgba(${v>.55?200:20},${v>.55?210:35},${v>.55?215:40},${.035+rnd()*.09})`;x.beginPath();x.arc(rnd()*512,rnd()*512,1+rnd()*16,0,7);x.fill()}
+x.strokeStyle='rgba(255,255,255,.055)';for(let i=0;i<36;i++){x.beginPath();for(let k=0;k<=512;k+=5)x[k?'lineTo':'moveTo'](k,i*14+Math.sin(k/16+i)*6+Math.sin(k/6)*1.1);x.stroke()}
+x.strokeStyle='rgba(0,0,0,.09)';for(let i=0;i<50;i++){x.beginPath();const y=rnd()*512;for(let k=0;k<=512;k+=3)x[k?'lineTo':'moveTo'](k,y+Math.sin(k/11+i)*3.5);x.stroke()}
+// pebble speckles
+for(let i=0;i<400;i++){x.fillStyle=`rgba(${40+rnd()*40},${50+rnd()*40},${45+rnd()*30},${.15+rnd()*.25})`;x.beginPath();x.arc(rnd()*512,rnd()*512,.5+rnd()*2,0,7);x.fill()}}
+const stx=new T.CanvasTexture(sc2);stx.wrapS=stx.wrapT=T.RepeatWrapping;stx.repeat.set(52,52);
+// seabed: muted olive-sand, not bright teal
+const sea=new T.Mesh(new T.CircleGeometry(240,96),new T.MeshStandardMaterial({map:stx,color:0x2a4a40,roughness:.95,metalness:0,envMapIntensity:.2}));sea.rotation.x=-PI/2;scene.add(sea);
+
+// rocks: muted grey-green / brown-green (real reef rock)
+const rk=M(0x2a3a35,.06,.9,0x000000);
+const rk2=M(0x243830,.05,.92,0x000000);
+const rk3=M(0x1e322c,.04,.93,0x000000);
+for(let i=0;i<60;i++){const a=rnd()*PI*2,r=5+rnd()*42,s=.3+rnd()*2.6,m=new T.Mesh(new T.DodecahedronGeometry(1,0),[rk,rk2,rk3][i%3]);m.scale.set(s,s*(.35+rnd()*.5),s);m.position.set(Math.cos(a)*r,s*.12,Math.sin(a)*r);m.rotation.set(rnd()*3,rnd()*3,rnd()*3);scene.add(m)}
+// larger distant rock formations
+for(let i=0;i<28;i++){const a=rnd()*PI*2,r=36+rnd()*100,s=2+rnd()*7;const g=new T.Group();
+for(let j=0;j<5+rnd()*6|0;j++){const m=new T.Mesh(new T.DodecahedronGeometry(1,0),i%2?rk:rk2);m.scale.set(s*(.5+rnd()*.6),s*(.3+rnd()*.55),s*(.5+rnd()*.6));m.position.set((rnd()-.5)*s*1.7,s*.15+(rnd()-.2)*s*.45,(rnd()-.5)*s*1.7);m.rotation.set(rnd()*2,rnd()*2,rnd()*2);g.add(m)}
+g.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(g)}
+
+// gear ruins — more of them
+const ruin=[];[[-9,-6,2.8],[10,-9,3.6],[7,10,2.4],[-11,9,3.2],[15,4,2.1],[-5,14,2.9],[18,-12,2.5],[-16,6,3.0],[4,-16,2.7],[-8,-14,2.3]].forEach(([x,z,r],i)=>{const g=new T.Group(),m=new T.Mesh(gearGeo(18,r,.55),i%2?bronze:copper);g.add(m);g.rotation.x=-PI/2;g.position.set(x,.18,z);scene.add(g);ruin.push({m,v:(i%2?-1:1)*.07})});
+
+// === SUNKEN SHIP WRECK ===
+const shipWood=M(0x3a3228,.05,.85,0x0a0806);
+const shipDark=M(0x2a2420,.04,.9,0x050403);
+const shipRust=M(0x5a3a28,.4,.55,0x1a1008);
+const shipMoss=M(0x2a4a38,.08,.8,0x0a1810);
+const ship=new T.Group();
+// main hull — long tapered form, listing to starboard
+{const hull=new T.Mesh(new T.BoxGeometry(28,5.5,9),shipWood);hull.position.set(0,2.2,0);ship.add(hull);
+const bow=new T.Mesh(new T.ConeGeometry(4.2,8,6),shipWood);bow.rotation.z=-PI/2;bow.position.set(16,2.0,0);ship.add(bow);
+const stern=new T.Mesh(new T.BoxGeometry(4,5.2,8.5),shipDark);stern.position.set(-14.5,2.1,0);ship.add(stern);
+// deck
+const deck=new T.Mesh(new T.BoxGeometry(26,.35,8.2),shipDark);deck.position.set(0,5.0,0);ship.add(deck);
+// cabin midship
+const cabin=new T.Mesh(new T.BoxGeometry(7,3.2,6),shipWood);cabin.position.set(-2,6.5,0);ship.add(cabin);
+const cabinRoof=new T.Mesh(new T.BoxGeometry(7.4,.3,6.4),shipDark);cabinRoof.position.set(-2,8.2,0);ship.add(cabinRoof);
+// broken main mast
+const mast=new T.Mesh(new T.CylinderGeometry(.35,.45,14,8),shipDark);mast.position.set(3,5,0);mast.rotation.z=.55;mast.rotation.x=.15;ship.add(mast);
+const mastTop=new T.Mesh(new T.CylinderGeometry(.2,.3,6,6),shipDark);mastTop.position.set(7.5,12.5,.8);mastTop.rotation.z=1.1;ship.add(mastTop);
+// secondary broken mast
+const mast2=new T.Mesh(new T.CylinderGeometry(.25,.35,9,6),shipDark);mast2.position.set(-8,4.5,1);mast2.rotation.z=-.7;mast2.rotation.x=-.2;ship.add(mast2);
+// rail remnants
+for(let i=0;i<6;i++){const rail=new T.Mesh(new T.BoxGeometry(.15,.7,.15),shipRust);rail.position.set(-10+i*4,5.4,3.9);ship.add(rail);
+const rail2=new T.Mesh(new T.BoxGeometry(.15,.7,.15),shipRust);rail2.position.set(-10+i*4,5.4,-3.9);ship.add(rail2)}
+// hull hole / damage
+const hole=new T.Mesh(new T.SphereGeometry(2.2,8,6),shipDark);hole.position.set(4,1.5,4.2);hole.scale.set(1,.7,1.3);ship.add(hole);
+// rudder
+const rudder=new T.Mesh(new T.BoxGeometry(.3,3.5,2),shipDark);rudder.position.set(-16.5,1.5,0);ship.add(rudder);
+// cargo crates spilled
+for(let i=0;i<8;i++){const crate=new T.Mesh(new T.BoxGeometry(1.3+rnd()*.7,1+rnd()*.6,1.2+rnd()*.6),i%2?shipRust:shipWood);
+crate.position.set(-8+rnd()*18,.55+rnd()*.5,-5+rnd()*5);crate.rotation.y=rnd()*2;crate.rotation.z=(rnd()-.5)*.5;ship.add(crate)}
+// moss / growth patches on hull
+for(let i=0;i<12;i++){const moss=new T.Mesh(new T.SphereGeometry(.7+rnd()*1.3,6,5),shipMoss);
+moss.position.set(-12+rnd()*24,rnd()*5,-4.5+rnd()*9);moss.scale.set(1,.35+rnd()*.55,1.2);ship.add(moss)}
+// chain / anchor
+const chain=new T.Mesh(new T.CylinderGeometry(.08,.08,5,5),shipRust);chain.position.set(12,.3,5);chain.rotation.z=1.2;chain.rotation.x=.3;ship.add(chain);
+const anchor=new T.Mesh(new T.TorusGeometry(1.1,.18,6,10),shipRust);anchor.position.set(14.5,.4,6.5);anchor.rotation.x=PI/2;ship.add(anchor);
+// --- INTERIOR / STORY DETAIL ---
+// open hold cutaway (dark interior volume)
+const hold=new T.Mesh(new T.BoxGeometry(10,3.2,6.5),new T.MeshStandardMaterial({color:0x12100e,roughness:1,metalness:0,side:T.BackSide}));
+hold.position.set(5,2.4,0);ship.add(hold);
+// hold doorway from hull hole side
+const holdRim=new T.Mesh(new T.TorusGeometry(1.8,.12,6,12),shipRust);holdRim.position.set(4,1.8,4.0);holdRim.rotation.y=PI/2;ship.add(holdRim);
+// interior crates in hold
+for(let i=0;i<4;i++){const ic=new T.Mesh(new T.BoxGeometry(1.2,1,1.2),shipWood);ic.position.set(3+i*1.8,1.2,(i%2?1.2:-1.2));ic.rotation.y=rnd();ship.add(ic)}
+// ship's wheel (stern)
+const wheel=new T.Group();
+const wHub=new T.Mesh(new T.CylinderGeometry(.25,.25,.3,10),shipRust);wHub.rotation.x=PI/2;wheel.add(wHub);
+const wRim=new T.Mesh(new T.TorusGeometry(1.1,.08,6,16),shipRust);wRim.rotation.y=PI/2;wheel.add(wRim);
+for(let i=0;i<8;i++){const sp=new T.Mesh(new T.BoxGeometry(.08,.08,1.1),shipDark);sp.rotation.x=i/8*PI;wheel.add(sp)}
+wheel.position.set(-14.2,6.2,0);wheel.rotation.y=.3;ship.add(wheel);
+// lanterns (emissive warm points of story light)
+const lanMat=new T.MeshStandardMaterial({color:0xc8a060,emissive:0xffa040,emissiveIntensity:1.2,roughness:.4,metalness:.3});
+[[-2,7.2,2.8],[-2,7.2,-2.8],[6,5.6,3.5]].forEach(([x,y,z])=>{
+  const lan=new T.Mesh(new T.SphereGeometry(.28,8,6),lanMat);lan.position.set(x,y,z);ship.add(lan);
+  const lp=new T.PointLight(0xffb060,.55,8);lp.position.set(x,y,z);ship.add(lp);
+});
+// nameplate on bow
+const plate=new T.Mesh(new T.BoxGeometry(2.4,.4,.08),shipRust);plate.position.set(12,3.8,0);plate.rotation.y=0;ship.add(plate);
+const plate2=new T.Mesh(new T.BoxGeometry(2.1,.25,.09),M(0x1a1814,.2,.6,0x0a0806));plate2.position.set(12,3.8,.06);ship.add(plate2);
+// cabin door frame + interior bench
+const door=new T.Mesh(new T.BoxGeometry(1.4,2.2,.15),shipDark);door.position.set(-2,6.2,3.05);ship.add(door);
+const bench=new T.Mesh(new T.BoxGeometry(4,.35,1.1),shipWood);bench.position.set(-2,5.4,0);ship.add(bench);
+// barrel props
+for(let i=0;i<3;i++){const br=new T.Mesh(new T.CylinderGeometry(.55,.55,1.1,10),shipWood);br.position.set(-5+i*2.5,.7,4.5+rnd());br.rotation.z=(rnd()-.5)*.8;ship.add(br)}
+// rope coils
+for(let i=0;i<3;i++){const rp=new T.Mesh(new T.TorusGeometry(.5,.12,6,10),shipDark);rp.position.set(8+i*1.5,5.2,2.5-i);rp.rotation.x=PI/2;ship.add(rp)}
+}
+// list the wreck on the seabed, partially buried
+ship.position.set(22,.4,-18);
+ship.rotation.set(0.08,0.9,-0.22);
+ship.scale.setScalar(1.15);
+scene.add(ship);
+
+// === SHARKS — high-detail procedural great-white style ===
+const sharkSkin=new T.MeshStandardMaterial({color:0x5a6570,metalness:.22,roughness:.55,envMapIntensity:1.1,emissive:0x0c1218});
+const sharkBelly=new T.MeshStandardMaterial({color:0xc8d0d0,metalness:.08,roughness:.6,envMapIntensity:.7});
+const sharkFin=new T.MeshStandardMaterial({color:0x3d4852,metalness:.15,roughness:.6,envMapIntensity:.9});
+const sharkDark=new T.MeshStandardMaterial({color:0x2a3238,metalness:.1,roughness:.7});
+function makeShark(scale){
+  const g=new T.Group();
+  // multi-segment body for smoother silhouette
+  const segs=[
+    {x:2.1, sx:.7, sy:.55, sz:.6},   // snout base
+    {x:1.2, sx:1.15, sy:.95, sz:1.05},
+    {x:0, sx:1.35, sy:1.05, sz:1.2}, // mid
+    {x:-1.2, sx:1.1, sy:.9, sz:1.0},
+    {x:-2.2, sx:.75, sy:.65, sz:.7},
+    {x:-3.0, sx:.45, sy:.4, sz:.42}
+  ];
+  segs.forEach((s,i)=>{
+    const mesh=new T.Mesh(new T.SphereGeometry(1,14,12), i===0||i>3?sharkSkin:sharkSkin);
+    mesh.position.set(s.x,0,0);mesh.scale.set(s.sx,s.sy,s.sz);g.add(mesh);
+    if(i<4){const bel=new T.Mesh(new T.SphereGeometry(1,10,8),sharkBelly);bel.position.set(s.x,-.22,0);bel.scale.set(s.sx*.92,s.sy*.55,s.sz*.95);g.add(bel)}
+  });
+  // pointed snout
+  const snout=new T.Mesh(new T.ConeGeometry(.42,1.5,12),sharkSkin);snout.rotation.z=-PI/2;snout.position.set(3.0,-.02,0);g.add(snout);
+  const snoutB=new T.Mesh(new T.ConeGeometry(.32,1.1,10),sharkBelly);snoutB.rotation.z=-PI/2;snoutB.position.set(2.85,-.18,0);g.add(snoutB);
+  // jaw underbite
+  const jaw=new T.Mesh(new T.BoxGeometry(.9,.18,.55),sharkDark);jaw.position.set(2.5,-.4,0);jaw.rotation.z=.15;g.add(jaw);
+  // caudal fin (crescent) — group for wag
+  const tailG=new T.Group();tailG.position.set(-3.2,0,0);g.add(tailG);
+  const caudalU=new T.Mesh(new T.ConeGeometry(.08,2.4,7),sharkFin);caudalU.position.set(-.9,.55,0);caudalU.rotation.z=1.05;tailG.add(caudalU);
+  const caudalL=new T.Mesh(new T.ConeGeometry(.07,1.6,7),sharkFin);caudalL.position.set(-.7,-.35,0);caudalL.rotation.z=-.85;tailG.add(caudalL);
+  const caudalM=new T.Mesh(new T.BoxGeometry(.5,.12,.06),sharkFin);caudalM.position.set(-.3,0,0);tailG.add(caudalM);
+  // dorsal fin (tall triangle-ish)
+  const dorsal=new T.Mesh(new T.ConeGeometry(.1,1.7,7),sharkFin);dorsal.position.set(-.15,1.15,0);dorsal.scale.set(1.2,1,.25);g.add(dorsal);
+  // second smaller dorsal
+  const dorsal2=new T.Mesh(new T.ConeGeometry(.06,.7,6),sharkFin);dorsal2.position.set(-1.8,.7,0);dorsal2.scale.set(1,.9,.2);g.add(dorsal2);
+  // pectoral fins (wide)
+  const pecLG=new T.Group();pecLG.position.set(.5,-.2,.55);g.add(pecLG);
+  const pecL=new T.Mesh(new T.ConeGeometry(.07,2.1,7),sharkFin);pecL.rotation.set(0.15,0.1,1.25);pecL.scale.set(1,1,.35);pecLG.add(pecL);
+  const pecRG=new T.Group();pecRG.position.set(.5,-.2,-.55);g.add(pecRG);
+  const pecR=new T.Mesh(new T.ConeGeometry(.07,2.1,7),sharkFin);pecR.rotation.set(-0.15,-0.1,-1.25);pecR.scale.set(1,1,.35);pecRG.add(pecR);
+  // pelvic fins
+  const pelL=new T.Mesh(new T.ConeGeometry(.05,.9,6),sharkFin);pelL.position.set(-1.3,-.45,.35);pelL.rotation.z=.9;g.add(pelL);
+  const pelR=new T.Mesh(new T.ConeGeometry(.05,.9,6),sharkFin);pelR.position.set(-1.3,-.45,-.35);pelR.rotation.z=.9;g.add(pelR);
+  // eyes with highlight
+  const eyeW=new T.MeshBasicMaterial({color:0x1a1a1a});
+  const eyeH=new T.MeshBasicMaterial({color:0xcccccc});
+  [[1.9,.22,.48],[-1]].forEach((_,i)=>{const z=i?-.48:.48;
+    const e=new T.Mesh(new T.SphereGeometry(.1,8,8),eyeW);e.position.set(1.9,.22,z);g.add(e);
+    const h=new T.Mesh(new T.SphereGeometry(.035,6,6),eyeH);h.position.set(1.98,.26,z*1.05);g.add(h);
+  });
+  // gill slits
+  for(let i=0;i<5;i++){
+    const gl=new T.Mesh(new T.BoxGeometry(.035,.42,.025),sharkDark);gl.position.set(1.15-i*.12,.08,.62);gl.rotation.y=-.15;g.add(gl);
+    const gr=new T.Mesh(new T.BoxGeometry(.035,.42,.025),sharkDark);gr.position.set(1.15-i*.12,.08,-.62);gr.rotation.y=.15;g.add(gr);
+  }
+  // lateral line suggestion
+  for(let i=0;i<6;i++){const ll=new T.Mesh(new T.SphereGeometry(.04,5,5),sharkDark);ll.position.set(1.2-i*.55,.15,.7);g.add(ll);
+  const lr=new T.Mesh(new T.SphereGeometry(.04,5,5),sharkDark);lr.position.set(1.2-i*.55,.15,-.7);g.add(lr)}
+  g.scale.setScalar(scale);
+  g.userData={tailG,pecLG,pecRG,dorsal,jaw};
+  scene.add(g);
+  return g;
+}
+const sharkHome=new V(22,0,-18);
+const sharks=[
+  {m:makeShark(1.55), pathR:34, pathY:7.2, speed:.07, phase:0, roam:1},
+  {m:makeShark(1.05), pathR:46, pathY:10, speed:-.048, phase:2.1, roam:1.2},
+  {m:makeShark(.7), pathR:24, pathY:4.5, speed:.1, phase:3.8, roam:.8}
+];
+
+// === SEA TURTLES ===
+const turtShell=M(0x3a5a40,.1,.7,0x0a180c),turtSkin=M(0x6a7a50,.05,.75,0x1a2010);
+function makeTurtle(scale){
+  const g=new T.Group();
+  const shell=new T.Mesh(new T.SphereGeometry(1,12,10),turtShell);shell.scale.set(1.3,.45,1.6);g.add(shell);
+  const scutes=new T.Mesh(new T.SphereGeometry(1,8,6),M(0x2a4a30,.08,.8,0x081208));scutes.scale.set(1.15,.5,1.4);scutes.position.y=.05;g.add(scutes);
+  const head=new T.Mesh(new T.SphereGeometry(.35,8,8),turtSkin);head.position.set(1.3,.05,0);head.scale.set(1.2,.8,0.9);g.add(head);
+  const flipG=[];
+  [[.4,-.1,.7,1],[.4,-.1,-.7,-1],[-.6,-.1,.5,1],[-.6,-.1,-.5,-1]].forEach(([x,y,z,s])=>{
+    const fg=new T.Group();fg.position.set(x,y,z);g.add(fg);
+    const fl=new T.Mesh(new T.ConeGeometry(.12,1.1,6),turtSkin);fl.rotation.z=s*.9;fl.scale.set(1,.3,1);fg.add(fl);flipG.push(fg);
+  });
+  g.scale.setScalar(scale);g.userData={flipG};scene.add(g);return g;
+}
+const turtles=[
+  {m:makeTurtle(1.2), pathR:40, pathY:5, speed:.035, phase:1.2},
+  {m:makeTurtle(.9), pathR:55, pathY:8, speed:-.028, phase:3.5}
+];
+
+// === TREASURE CHEST (near ship) ===
+const chest=new T.Group();
+const chestWood=M(0x5a3a20,.15,.7,0x1a1008),chestGold=M(0xd4a820,.85,.25,0x3a2808);
+{const base=new T.Mesh(new T.BoxGeometry(1.8,1,1.2),chestWood);base.position.y=.5;chest.add(base);
+const lid=new T.Mesh(new T.BoxGeometry(1.85,.35,1.25),chestWood);lid.position.set(0,1.15,-.15);lid.rotation.x=-.55;chest.add(lid);
+const band1=new T.Mesh(new T.BoxGeometry(1.9,.12,1.3),chestGold);band1.position.y=.35;chest.add(band1);
+const band2=new T.Mesh(new T.BoxGeometry(1.9,.12,1.3),chestGold);band2.position.y=.75;chest.add(band2);
+const lock=new T.Mesh(new T.BoxGeometry(.25,.3,.15),chestGold);lock.position.set(0,.55,.62);chest.add(lock);
+// gold coins pile glowing
+const coinMat=new T.MeshStandardMaterial({color:0xffd040,metalness:.9,roughness:.2,emissive:0xaa7000,emissiveIntensity:.6});
+for(let i=0;i<12;i++){const c=new T.Mesh(new T.CylinderGeometry(.12,.12,.04,10),coinMat);c.position.set((rnd()-.5)*.8,.95+rnd()*.25,(rnd()-.5)*.5);c.rotation.x=rnd();c.rotation.z=rnd();chest.add(c)}
+const chestGlow=new T.PointLight(0xffc040,1.2,8);chestGlow.position.set(0,1.2,0);chest.add(chestGlow);
+}
+chest.position.set(18,.15,-22);chest.rotation.y=.6;scene.add(chest);
+
+// === UNDERWATER CAVES ===
+const caveMat=M(0x1a2828,.05,.92,0x000000);
+const caves=[];
+[[-25,8,12],[30,-20,10],[5,35,14],[-40,-30,11]].forEach(([cx,cz,s])=>{
+  const g=new T.Group();
+  // rocky mound
+  for(let i=0;i<8;i++){const r=new T.Mesh(new T.DodecahedronGeometry(1,0),caveMat);
+    r.position.set((rnd()-.5)*s*.8,rnd()*s*.4,(rnd()-.5)*s*.6);r.scale.set(s*(.3+rnd()*.4),s*(.25+rnd()*.35),s*(.3+rnd()*.4));r.rotation.set(rnd(),rnd(),rnd());g.add(r)}
+  // dark cave mouth
+  const mouth=new T.Mesh(new T.SphereGeometry(s*.35,10,8),new T.MeshBasicMaterial({color:0x020608}));mouth.position.set(0,s*.15,s*.25);mouth.scale.set(1.2,.9,1);g.add(mouth);
+  // inner glow (bioluminescent cave)
+  const cg=new T.PointLight(0x20c8a0,.4,s*1.5);cg.position.set(0,s*.2,0);g.add(cg);
+  g.position.set(cx,0,cz);scene.add(g);caves.push(g);
+});
+
+// === ANCIENT UNDERWATER RUINS ===
+const ruinStone=M(0x4a5550,.08,.85,0x0a100e);
+const ruins=new T.Group();
+// columns
+for(let i=0;i<7;i++){
+  const h=4+rnd()*6, broken=rnd()<.4;
+  const col=new T.Mesh(new T.CylinderGeometry(.45,.55,broken?h*.5:h,10),ruinStone);
+  col.position.set(-12+i*4.5,(broken?h*.25:h*.5),.5+(rnd()-.5)*3);ruins.add(col);
+  if(!broken){const cap=new T.Mesh(new T.CylinderGeometry(.65,.65,.35,10),ruinStone);cap.position.set(col.position.x,h+.1,col.position.z);ruins.add(cap)}
+  else{const top=new T.Mesh(new T.CylinderGeometry(.4,.5,h*.4,8),ruinStone);top.position.set(col.position.x+1.2,h*.15,col.position.z+.5);top.rotation.z=1.1;ruins.add(top)}
+}
+// fallen arch pieces
+for(let i=0;i<4;i++){const arch=new T.Mesh(new T.TorusGeometry(2.5,.4,6,12,PI),ruinStone);arch.position.set(-8+i*6,.3,-2-rnd()*2);arch.rotation.x=PI/2;arch.rotation.z=(rnd()-.5)*.5;ruins.add(arch)}
+// temple platform
+const plat=new T.Mesh(new T.BoxGeometry(22,1,10),ruinStone);plat.position.set(0,.3,-1);ruins.add(plat);
+// glowing rune stones
+const runeMat=new T.MeshStandardMaterial({color:0x30d0c0,emissive:0x20a090,emissiveIntensity:1.2,roughness:.3,metalness:.2});
+for(let i=0;i<5;i++){const rn=new T.Mesh(new T.BoxGeometry(.6,1.2,.25),runeMat);rn.position.set(-10+i*5,1.2,3);ruins.add(rn);
+  const rl=new T.PointLight(0x30e0c0,.35,6);rl.position.copy(rn.position);rl.position.y+=.5;ruins.add(rl)}
+ruins.position.set(-30,.2,25);ruins.rotation.y=.4;scene.add(ruins);
+
+// === DEEP-SEA TRENCH (visual drop-off) ===
+const trenchG=new T.Group();
+const trenchMat=M(0x0a1418,.02,.95,0x000000);
+for(let i=0;i<20;i++){
+  const wall=new T.Mesh(new T.BoxGeometry(8+rnd()*6,12+rnd()*18,3+rnd()*4),trenchMat);
+  wall.position.set(50+(rnd()-.5)*8,-6-rnd()*8,-30+i*6+(rnd()-.5)*3);wall.rotation.y=(rnd()-.5)*.3;trenchG.add(wall);
+}
+// trench bioluminescent vents
+for(let i=0;i<8;i++){
+  const vent=new T.Mesh(new T.SphereGeometry(.4+rnd()*.3,8,6),new T.MeshStandardMaterial({color:0x40ffc0,emissive:0x20e0a0,emissiveIntensity:1.5,transparent:true,opacity:.7}));
+  vent.position.set(52+(rnd()-.5)*6,-2-rnd()*4,-20+i*5);trenchG.add(vent);
+  const vl=new T.PointLight(0x30ffb0,.5,10);vl.position.copy(vent.position);trenchG.add(vl);
+}
+scene.add(trenchG);
+
+// === EXTRA BIOLUMINESCENT CREATURES (floating orbs + ribbons) ===
+const bioOrbs=[];
+const bioMat=new T.MeshBasicMaterial({color:0x40ffe0,transparent:true,opacity:.65,blending:T.AdditiveBlending,depthWrite:false});
+for(let i=0;i<24;i++){
+  const o=new T.Mesh(new T.SphereGeometry(.15+rnd()*.35,8,8),bioMat.clone());
+  o.material.color.setHSL(.45+rnd()*.25,.8,.55);
+  o.position.set((rnd()-.5)*80,2+rnd()*18,(rnd()-.5)*80);
+  o.userData={ph:rnd()*6,sp:.3+rnd()*.8,amp:.5+rnd()*1.5,bx:o.position.x,by:o.position.y,bz:o.position.z};
+  scene.add(o);bioOrbs.push(o);
+}
+// glowing ribbon fish (simple elongated)
+const ribbons=[];
+for(let i=0;i<10;i++){
+  const rg=new T.Group();
+  const rm=new T.MeshBasicMaterial({color:0xff60c0,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false});
+  rm.color.setHSL(.7+rnd()*.2,.85,.55);
+  for(let k=0;k<6;k++){const seg=new T.Mesh(new T.SphereGeometry(.12-k*.012,6,6),rm);seg.position.x=-k*.35;rg.add(seg)}
+  rg.position.set((rnd()-.5)*60,4+rnd()*12,(rnd()-.5)*60);
+  rg.userData={ph:rnd()*6,sp:.4+rnd(),pathR:8+rnd()*15};scene.add(rg);ribbons.push(rg);
+}
+
+// second smaller shipwreck
+const ship2=ship.clone();ship2.position.set(-35,.2,40);ship2.rotation.set(0.12,-1.2,0.3);ship2.scale.setScalar(.7);scene.add(ship2);
+
+// volumetric light shafts — pale green-blue (real god rays)
+const beams=[];
+for(let i=0;i<14;i++){
+  const thick=.15+rnd()*.25, len=48+rnd()*20;
+  const m=new T.Mesh(new T.CylinderGeometry(thick,thick*8,len,12,1,true),new T.MeshBasicMaterial({color:0x8eb8a8,transparent:true,opacity:.03+rnd()*.018,blending:T.AdditiveBlending,side:T.DoubleSide,depthWrite:false}));
+  m.position.set((i-6.5)*7.2,20+rnd()*8,-4-rnd()*20);
+  m.rotation.z=.08+(rnd()-.5)*.2;m.rotation.x=(rnd()-.5)*.08;
+  scene.add(m);beams.push(m);
+}
+
+// cinematic bubble field
+const NB=420,bp=new Float32Array(NB*3),bsz=new Float32Array(NB);
+for(let i=0;i<NB;i++){bp[i*3]=(rnd()-.5)*80;bp[i*3+1]=rnd()*32;bp[i*3+2]=(rnd()-.5)*80;bsz[i]=.2+rnd()*.5}
+const bg2=new T.BufferGeometry();bg2.setAttribute('position',new T.BufferAttribute(bp,3));
+const bub=new T.Points(bg2,new T.PointsMaterial({map:white,size:.4,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,sizeAttenuation:true}));scene.add(bub);
+bg2.attributes.position.usage=T.DynamicDrawUsage;
+
+// dense marine snow / plankton (two layers)
+const pg=new T.BufferGeometry(),pa=new Float32Array(4800);for(let i=0;i<1600;i++){pa[i*3]=(rnd()-.5)*100;pa[i*3+1]=rnd()*34;pa[i*3+2]=(rnd()-.5)*100}pg.setAttribute('position',new T.BufferAttribute(pa,3));
+const plk=new T.Points(pg,new T.PointsMaterial({map:white,size:.11,color:0xa0c8b8,transparent:true,opacity:.32,depthWrite:false,blending:T.AdditiveBlending}));scene.add(plk);
+const pg2=new T.BufferGeometry(),pa2=new Float32Array(2400);for(let i=0;i<800;i++){pa2[i*3]=(rnd()-.5)*60;pa2[i*3+1]=rnd()*22;pa2[i*3+2]=(rnd()-.5)*60}pg2.setAttribute('position',new T.BufferAttribute(pa2,3));
+const plk2=new T.Points(pg2,new T.PointsMaterial({map:cyan,size:.18,color:0x70a898,transparent:true,opacity:.18,depthWrite:false,blending:T.AdditiveBlending}));scene.add(plk2);
+
+// swim wake / bioluminescent trail behind octopus
+const WN=80,wp=new Float32Array(WN*3),wa=new Float32Array(WN);for(let i=0;i<WN;i++){wp[i*3]=0;wp[i*3+1]=-99;wp[i*3+2]=0;wa[i]=0}
+const wg=new T.BufferGeometry();wg.setAttribute('position',new T.BufferAttribute(wp,3));
+const wake=new T.Points(wg,new T.PointsMaterial({map:cyan,size:.55,transparent:true,opacity:.55,depthWrite:false,blending:T.AdditiveBlending,color:0x60e8ff}));scene.add(wake);
+let wIdx=0;
+
+// floating debris (tiny gears / shards)
+const DN=60,debris=[];
+const debIM=new T.InstancedMesh(gearGeo(6,.4,.08),brass,DN);debIM.frustumCulled=false;scene.add(debIM);
+for(let i=0;i<DN;i++)debris.push({x:(rnd()-.5)*50,y:1+rnd()*16,z:(rnd()-.5)*50,s:.15+rnd()*.35,ph:rnd()*6,sp:.3+rnd()*1.2,vx:(rnd()-.5)*.15,vz:(rnd()-.5)*.15});
+
+// high-quality animated caustics
+const cc=document.createElement('canvas');cc.width=cc.height=512;
+{const x=cc.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,512,512);
+x.strokeStyle='rgba(140,200,180,.45)';x.lineWidth=2.2;
+for(let i=0;i<140;i++){x.beginPath();const cx=rnd()*512,cy=rnd()*512,r=8+rnd()*36;for(let a=0;a<=6.5;a+=.3){const rr=r*(.62+.38*Math.sin(a*3.4+i*1.9));x[a?'lineTo':'moveTo'](cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath();x.stroke()}
+x.strokeStyle='rgba(210,250,255,.22)';x.lineWidth=1.1;
+for(let i=0;i<80;i++){x.beginPath();const cx=rnd()*512,cy=rnd()*512,r=5+rnd()*22;for(let a=0;a<=6.5;a+=.35){const rr=r*(.68+.32*Math.sin(a*2.6+i));x[a?'lineTo':'moveTo'](cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath();x.stroke()}}
+const ct=new T.CanvasTexture(cc);ct.wrapS=ct.wrapT=T.RepeatWrapping;ct.repeat.set(11,11);
+const caus=new T.Mesh(new T.CircleGeometry(70,64),new T.MeshBasicMaterial({map:ct,transparent:true,opacity:.42,blending:T.AdditiveBlending,depthWrite:false}));caus.rotation.x=-PI/2;caus.position.y=.035;scene.add(caus);
+// second slower caustic layer for depth
+const caus2=new T.Mesh(new T.CircleGeometry(70,64),new T.MeshBasicMaterial({map:ct,transparent:true,opacity:.18,blending:T.AdditiveBlending,depthWrite:false}));caus2.rotation.x=-PI/2;caus2.position.y=.04;caus2.rotation.z=.4;scene.add(caus2);
+
+// chunk world — denser, larger radius
+const CS=18,RC=COARSE?5:6,NC=(2*RC+1)**2,WD=new T.Object3D(),hud=document.getElementById('hud');let lh=-1,wcx=1e9,wcz=1e9;
+const rockIM=new T.InstancedMesh(new T.DodecahedronGeometry(1),rk,NC*16),
+kelpIM=new T.InstancedMesh(new T.CylinderGeometry(.035,.15,1,6).translate(0,.5,0),M(0x2a6a48,0,.7,0x0a2818),NC*32),
+kelp2IM=new T.InstancedMesh(new T.CylinderGeometry(.025,.09,1,5).translate(0,.5,0),M(0x1e5a3a,0,.75,0x082014),NC*22),
+gearIM=new T.InstancedMesh(gearGeo(18,1,.5),bronze,NC*2),
+spireIM=new T.InstancedMesh(new T.ConeGeometry(1,1,7).translate(0,.5,0),new T.MeshStandardMaterial({color:0x3a98a8,emissive:0x186878,emissiveIntensity:.7,roughness:.25,metalness:.25,transparent:true,opacity:.88}),NC*2);
+[rockIM,kelpIM,kelp2IM,gearIM,spireIM].forEach(m=>{m.frustumCulled=false;scene.add(m)});
+const KD=[],KD2=[],GD=[];
+function rebuild(cx0,cz0){let ri=0,si=0;xr();KD.length=0;KD2.length=0;GD.length=0;
+ for(let a=-RC;a<=RC;a++)for(let b=-RC;b<=RC;b++){const cx=cx0+a,cz=cz0+b;let s=(((cx*73856093)^(cz*19349663))>>>0)%2147483646+1;const r=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646};
+  for(let i=0;i<14;i++){const k=.28+r()*r()*3.5;WD.position.set((cx+r())*CS,k*.18,(cz+r())*CS);WD.rotation.set(r()*3,r()*3,r()*3);WD.scale.set(k,k*(.4+r()*.4),k);WD.updateMatrix();rockIM.setMatrixAt(ri++,WD.matrix)}
+  for(let i=0;i<28;i++)KD.push({x:(cx+r())*CS,z:(cz+r())*CS,h:5+r()*14,ph:r()*6,w:.7+r()*.9});
+  for(let i=0;i<18;i++)KD2.push({x:(cx+r())*CS,z:(cz+r())*CS,h:3+r()*8,ph:r()*6,w:.4+r()*.65});
+  if(r()<.75)GD.push({x:(cx+r())*CS,z:(cz+r())*CS,k:1.2+r()*3.6,vert:r()<.45,yaw:r()*PI,v:(r()<.5?-1:1)*(.04+r()*.16)});
+  if(r()<.6){const h=5+r()*15,w=.6+r()*1.8;WD.position.set((cx+r())*CS,0,(cz+r())*CS);WD.rotation.set((r()-.5)*.3,0,(r()-.5)*.3);WD.scale.set(w,h,w);WD.updateMatrix();spireIM.setMatrixAt(si++,WD.matrix)}ex(cx,cz,r)}
+ rockIM.instanceMatrix.needsUpdate=true;spireIM.count=si;spireIM.instanceMatrix.needsUpdate=true;gearIM.count=GD.length;xe()}
+function world(st){
+ KD.forEach((k,i)=>{const sway=Math.sin(st*.48+k.ph)*.18+Math.sin(st*.9+k.ph*1.3)*.06;WD.position.set(k.x,0,k.z);WD.rotation.set(sway,0,Math.cos(st*.42+k.ph)*.17+Math.cos(st*.8+k.ph)*.05);WD.scale.set(k.w,k.h,k.w);WD.updateMatrix();kelpIM.setMatrixAt(i,WD.matrix)});kelpIM.count=KD.length;kelpIM.instanceMatrix.needsUpdate=true;
+ KD2.forEach((k,i)=>{const sway=Math.sin(st*.65+k.ph)*.22+Math.sin(st*1.1+k.ph)*.07;WD.position.set(k.x,0,k.z);WD.rotation.set(sway*.85,0,Math.cos(st*.55+k.ph)*.2);WD.scale.set(k.w,k.h,k.w);WD.updateMatrix();kelp2IM.setMatrixAt(i,WD.matrix)});kelp2IM.count=KD2.length;kelp2IM.instanceMatrix.needsUpdate=true;
+ GD.forEach((g,i)=>{WD.position.set(g.x,g.vert?g.k*.55:.16,g.z);WD.rotation.set(g.vert?0:-PI/2,g.vert?g.yaw:0,0);qs.setFromAxisAngle(Z,st*g.v);WD.quaternion.multiply(qs);WD.scale.setScalar(g.k);WD.updateMatrix();gearIM.setMatrixAt(i,WD.matrix)});gearIM.instanceMatrix.needsUpdate=true}
+const qa2=new Q(),qb2=new Q(),tp2=new V(),cc2=new T.Color();
+const coralIM=new T.InstancedMesh(new T.ConeGeometry(.3,1,6).translate(0,.5,0),new T.MeshStandardMaterial({roughness:.45,metalness:.15,emissive:0x181818}),NC*26),
+cogIM=new T.InstancedMesh(gearGeo(8,1,.13),copper,NC*18),
+lampIM=new T.InstancedMesh(new T.SphereGeometry(1,10,8),new T.MeshBasicMaterial({color:0xffffff}),NC*10),
+jellyIM=new T.InstancedMesh(new T.SphereGeometry(1,14,8,0,PI*2,0,PI/2),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}),NC*5),
+fishB=new T.InstancedMesh(new T.SphereGeometry(1,8,6),new T.MeshStandardMaterial({roughness:.4,metalness:.2,emissive:0x111111}),NC*20),
+fishT=new T.InstancedMesh(new T.ConeGeometry(.26,.46,3).rotateX(PI/2),new T.MeshStandardMaterial({roughness:.4,metalness:.15,emissive:0x0a0a0a}),NC*20),
+anemIM=new T.InstancedMesh(new T.CylinderGeometry(.07,.18,.55,6).translate(0,.28,0),M(0x8a5060,.08,.65,0x2a1520),NC*16),
+starIM=new T.InstancedMesh(new T.DodecahedronGeometry(.35,0),M(0x8a5040,.15,.7,0x201008),NC*8);
+[coralIM,cogIM,lampIM,jellyIM,fishB,fishT,anemIM,starIM].forEach(m=>{m.frustumCulled=false;scene.add(m)});
+// pre-allocate instance color buffers for meshes that use setColorAt
+[coralIM,lampIM,jellyIM,fishB,fishT].forEach(m=>{if(!m.instanceColor){m.instanceColor=new T.InstancedBufferAttribute(new Float32Array(m.count*3),3)}});
+const LN=NC*10,lg2=new T.BufferGeometry(),lpA=new Float32Array(LN*3),lcA=new Float32Array(LN*3);lg2.setAttribute('position',new T.BufferAttribute(lpA,3));lg2.setAttribute('color',new T.BufferAttribute(lcA,3));
+const lampP=new T.Points(lg2,new T.PointsMaterial({map:white,size:3.8,vertexColors:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:.85}));lampP.frustumCulled=false;scene.add(lampP);
+const VN=NC*32,vg=new T.BufferGeometry(),vA=new Float32Array(VN*3);vg.setAttribute('position',new T.BufferAttribute(vA,3));
+const ventP=new T.Points(vg,new T.PointsMaterial({map:white,size:.4,transparent:true,opacity:.6,depthWrite:false,blending:T.AdditiveBlending}));ventP.frustumCulled=false;scene.add(ventP);
+
+const lev=new T.Group(),levM=new T.MeshBasicMaterial({color:0x031018,transparent:true,opacity:.62,fog:false});
+{const b=new T.Mesh(new T.SphereGeometry(1,16,10),levM);b.scale.set(15,5.5,5.5);lev.add(b);const tl2=new T.Mesh(new T.ConeGeometry(2.4,13,8).rotateZ(PI/2),levM);tl2.position.x=-19;lev.add(tl2);const fn=new T.Mesh(new T.BoxGeometry(5.5,.3,10),levM);fn.position.set(3.2,-2.1,0);lev.add(fn)}scene.add(lev);
+let ci=0,gi2=0,li=0,ai=0,si2=0;const FS=[],JL=[],VT=[],AN=[],ST=[];
+function xr(){ci=gi2=li=ai=si2=0;FS.length=JL.length=VT.length=AN.length=ST.length=0}
+function xe(){coralIM.count=ci;coralIM.instanceMatrix.needsUpdate=true;if(coralIM.instanceColor)coralIM.instanceColor.needsUpdate=true;cogIM.count=gi2;cogIM.instanceMatrix.needsUpdate=true;lampIM.count=li;lampIM.instanceMatrix.needsUpdate=true;if(lampIM.instanceColor)lampIM.instanceColor.needsUpdate=true;lg2.setDrawRange(0,li);lg2.attributes.position.needsUpdate=true;lg2.attributes.color.needsUpdate=true;jellyIM.count=JL.length;if(jellyIM.instanceColor)jellyIM.instanceColor.needsUpdate=true;anemIM.count=ai;anemIM.instanceMatrix.needsUpdate=true;starIM.count=si2;starIM.instanceMatrix.needsUpdate=true}
+function ex(cx,cz,r){
+ if(r()<.7){const bx=(cx+r())*CS,bz=(cz+r())*CS,hue=.05+r()*.55;for(let i=0;i<22&&ci<NC*26;i++){const a=r()*PI*2,d=r()*4,h=.6+r()*3;WD.position.set(bx+Math.cos(a)*d,0,bz+Math.sin(a)*d);WD.rotation.set((r()-.5)*.65,0,(r()-.5)*.65);WD.scale.set(.45+r()*1.1,h,.45+r()*1.1);WD.updateMatrix();coralIM.setMatrixAt(ci,WD.matrix);cc2.setHSL((hue+r()*.12)%1,.45,.32+r()*.12);coralIM.setColorAt(ci++,cc2)}}
+ if(r()<.85)for(let i=0;i<6;i++){const k=.22+r()*.85;WD.position.set((cx+r())*CS,.055,(cz+r())*CS);WD.rotation.set(-PI/2,0,r()*6);WD.scale.setScalar(k);WD.updateMatrix();cogIM.setMatrixAt(gi2++,WD.matrix)}
+ if(r()<.65){for(let i=0,n=1+(r()*5|0);i<n&&li<LN;i++){const x=(cx+r())*CS,z=(cz+r())*CS,h=.9+r()*2.6,k=.24+r()*.26;WD.position.set(x,h,z);WD.rotation.set(0,0,0);WD.scale.setScalar(k);WD.updateMatrix();lampIM.setMatrixAt(li,WD.matrix);cc2.setHSL(r()<.4?.45:.15,.55,.4+r()*.1);lampIM.setColorAt(li,cc2);lpA[li*3]=x;lpA[li*3+1]=h;lpA[li*3+2]=z;lcA[li*3]=cc2.r;lcA[li*3+1]=cc2.g;lcA[li*3+2]=cc2.b;li++}}
+ if(r()<.7){JL.push({x:(cx+r())*CS,z:(cz+r())*CS,y:3+r()*15,s:.6+r()*1.9,ph:r()*6});cc2.setHSL(.45+r()*.25,.4,.4);jellyIM.setColorAt(JL.length-1,cc2)}
+ if(r()<.6)FS.push({x:(cx+.5)*CS,z:(cz+.5)*CS,y:1.8+r()*13,R:2.8+r()*9,w:(.22+r()*.55)*(r()<.5?-1:1),ph:r()*6,n:10+((r()*9)|0)});
+ if(r()<.45)VT.push({x:(cx+r())*CS,z:(cz+r())*CS,ph:r()});
+ if(r()<.55){const bx=(cx+r())*CS,bz=(cz+r())*CS;for(let i=0;i<7+r()*9|0;i++){const a=r()*PI*2,d=r()*2.3;AN.push({x:bx+Math.cos(a)*d,z:bz+Math.sin(a)*d,h:.4+r()*1.5,ph:r()*6})}}
+ if(r()<.4){for(let i=0;i<3+r()*5|0;i++){const a=r()*PI*2,d=r()*4.5;ST.push({x:(cx+r())*CS+Math.cos(a)*d,z:(cz+r())*CS+Math.sin(a)*d,s:.28+r()*.55,ph:r()*6})}}
+}
+function ext(st){
+ let k=0;FS.forEach((f,fi)=>{const n=f.n||10;for(let i=0;i<n;i++){const a=st*f.w+f.ph+i*.55+Math.sin(st*.6+i)*.2,rr=f.R+Math.sin(i*2.1+st*.5)*1.4,x=f.x+Math.cos(a)*rr,z=f.z+Math.sin(a)*rr,y=f.y+Math.sin(a*2+i)*.95;
+  qa2.setFromAxisAngle(Y,Math.atan2(-Math.sin(a)*f.w,Math.cos(a)*f.w));WD.position.set(x,y,z);WD.quaternion.copy(qa2);WD.scale.set(.16,.22,.6);WD.updateMatrix();fishB.setMatrixAt(k,WD.matrix);
+  // colorful tropical fish
+  cc2.setHSL((fi*.17+i*.08)%1,.75,.45);fishB.setColorAt(k,cc2);fishT.setColorAt(k,cc2);
+  qb2.setFromAxisAngle(Y,Math.sin(st*7+i)*.5);tp2.set(0,0,-.85).applyQuaternion(qa2);WD.position.set(x+tp2.x,y,z+tp2.z);WD.quaternion.copy(qa2).multiply(qb2);WD.scale.set(.9,.8,1);WD.updateMatrix();fishT.setMatrixAt(k,WD.matrix);k++}});
+ fishB.count=fishT.count=k;fishB.instanceMatrix.needsUpdate=fishT.instanceMatrix.needsUpdate=true;
+ if(fishB.instanceColor){fishB.instanceColor.needsUpdate=true;fishT.instanceColor.needsUpdate=true}
+ JL.forEach((j,i)=>{const p2=1+.22*Math.sin(st*1.85+j.ph);WD.position.set(j.x+Math.sin(st*.16+j.ph)*2.6,j.y+Math.sin(st*.32+j.ph)*2.0,j.z);WD.rotation.set(0,0,0);WD.scale.set(j.s*p2,j.s*(2.1-p2)*.72,j.s*p2);WD.updateMatrix();jellyIM.setMatrixAt(i,WD.matrix)});jellyIM.instanceMatrix.needsUpdate=true;
+ AN.forEach((a,i)=>{const sway=Math.sin(st*1.7+a.ph)*.28;WD.position.set(a.x,0,a.z);WD.rotation.set(sway*.45,0,Math.cos(st*1.4+a.ph)*.35);WD.scale.set(.85+sway*.18,a.h*(1+sway*.12),.85);WD.updateMatrix();anemIM.setMatrixAt(i,WD.matrix)});anemIM.count=AN.length;anemIM.instanceMatrix.needsUpdate=true;
+ ST.forEach((s,i)=>{WD.position.set(s.x,.08,s.z);WD.rotation.set(0,st*.3+s.ph,0);WD.scale.setScalar(s.s);WD.updateMatrix();starIM.setMatrixAt(i,WD.matrix)});starIM.count=ST.length;starIM.instanceMatrix.needsUpdate=true;
+ lampP.material.opacity=.6+.3*Math.sin(st*1.7);
+ let n=0;VT.forEach(v=>{for(let b=0;b<32;b++){const t2=(st*.3+v.ph+b/32)%1;vA[n++]=v.x+Math.sin(b*3+st)*.6*t2;vA[n++]=t2*18;vA[n++]=v.z+Math.cos(b*2.1+st)*.6*t2}});vg.setDrawRange(0,VT.length*32);vg.attributes.position.needsUpdate=true;
+ const a=st*.02;lev.position.set(px+Math.cos(a)*130,48+Math.sin(st*.14)*6+py*.15,pz+Math.sin(a)*130);lev.rotation.y=-(a+PI/2);lev.rotation.z=Math.sin(st*.08)*.04;mantas(st);poi(st)}
+
+// explode data
+function mk(n){const o={R:[],ax:[],an:[],dl:[]};for(let i=0;i<n;i++){o.R.push(new V(rnd()-.5,rnd()-.3,rnd()-.5).normalize().multiplyScalar(2+rnd()*5));o.ax.push(new V(rnd()-.5,rnd()-.5,rnd()-.5).normalize());o.an.push((rnd()-.5)*8);o.dl.push(rnd()*.8)}return o}
+const op=new V(),oq=new Q(),tq=new Q(),CEN=new V(0,4.6,0);
+function xf(X,i,p,q,E,st){const e=sm(E*1.8-X.dl[i]);op.copy(p);if(e>0){const r=X.R[i];op.x+=(p.x-CEN.x)*.8*e+r.x*e;op.y+=(p.y-CEN.y)*.8*e+r.y*e;op.z+=(p.z-CEN.z)*.8*e+r.z*e;tq.setFromAxisAngle(X.ax[i],(X.an[i]+st*.5*(i%2?1:-1))*e);oq.copy(tq).multiply(q)}else oq.copy(q)}
+
+// arms
+const NT=8,NS=30,NG=NS/2;
+const segM=new T.InstancedMesh(new T.CylinderGeometry(1,.9,1,10),oB,NT*NS),ringM=new T.InstancedMesh(new T.TorusGeometry(1,.18,6,14).rotateX(PI/2),oC,NT*NS),
+cupM=new T.InstancedMesh(new T.CylinderGeometry(.55,.28,.35,8).rotateX(PI/2),oZ,NT*NS),gearM=new T.InstancedMesh(gearGeo(12,1,.2),oB,NT*NG);
+[segM,ringM,cupM,gearM].forEach(m=>{m.frustumCulled=false;scene.add(m)});
+const Xs=mk(NT*NS),Xr=mk(NT*NS),Xc=mk(NT*NS),Xg=mk(NT*NG);
+
+// head plates
+const rx=1.55,ry=1.9,C=new V(0,5.6,0),PL=[],o3=new T.Object3D(),pc=[0xd4a548,0xc0683a,0xb08a3a,0x9a6a30].map(c=>new T.Color(c)); // C = head center offset from body origin
+for(let k=0;k<9;k++){const th=.35+k*.25,n=Math.max(5,Math.round(16*Math.sin(th))),w=2*PI*rx*Math.sin(th)/n*.92;
+ for(let j=0;j<n;j++){const ph=j/n*PI*2+(k%2)*PI/n,P=new V(rx*Math.sin(th)*Math.cos(ph),ry*Math.cos(th),rx*Math.sin(th)*Math.sin(ph)),nr=new V(P.x/(rx*rx),P.y/(ry*ry),P.z/(rx*rx)).normalize();
+  o3.position.copy(P);o3.lookAt(P.clone().add(nr));PL.push({lp:P,q:o3.quaternion.clone(),s:new V(w,.44,.09)})}}
+const plM=new T.InstancedMesh(new T.BoxGeometry(1,1,1),oW,PL.length);plM.frustumCulled=false;scene.add(plM);
+// ensure instanceColor buffer exists
+if(!plM.instanceColor){const arr=new Float32Array(PL.length*3);plM.instanceColor=new T.InstancedBufferAttribute(arr,3)}
+const PLI=PL.map(()=>(rnd()*4)|0);PL.forEach((p,i)=>plM.setColorAt(i,pc[PLI[i]]));plM.instanceColor.needsUpdate=true;
+const Xp=mk(PL.length);
+const pistM=new T.InstancedMesh(new T.CylinderGeometry(1,1,1,6),M(0xe8e0d0,.9,.2),NT*NS),glowM=new T.InstancedMesh(new T.TorusGeometry(1,.1,6,16).rotateX(PI/2),new T.MeshBasicMaterial({color:0xffffff,transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false}),NT*NS),NM=18,mgM=new T.InstancedMesh(gearGeo(10,1,.18),oC,NM);
+[pistM,glowM,mgM].forEach(m=>{m.frustumCulled=false;scene.add(m)});
+glowM.instanceColor=new T.InstancedBufferAttribute(new Float32Array(NT*NS*3),3);
+const Xo=mk(NT*NS),Xm=mk(NM),MG=[],cA=new T.Color(0x20e0ff),cB=new T.Color(0xffa030),cz=new T.Color();
+const Xw=mk(NT*2),Xa=mk(NT); // tip wheels removed from tentacles
+for(let i=0;i<NM;i++){const th=.7+rnd()*1.3,ph=rnd()*PI*2,P=new V(rx*Math.sin(th)*Math.cos(ph),ry*Math.cos(th),rx*Math.sin(th)*Math.sin(ph)).multiplyScalar(1.04),nr=new V(P.x/(rx*rx),P.y/(ry*ry),P.z/(rx*rx)).normalize();o3.position.copy(P);o3.lookAt(P.clone().add(nr));MG.push({lp:P,q:o3.quaternion.clone(),s:.22+rnd()*.22,v:(rnd()<.5?-1:1)*(.5+rnd())})}
+
+// loose parts
+const loose=[],QI=new Q(),Z=new V(0,0,1),qs=new Q();
+function lo(o,lp,lq,sp){scene.add(o);loose.push({o,lp,lq:lq||QI.clone(),sp:sp||0})}
+const coreMat=M(0xffa030,.12,.2,0xff8a10);coreMat.emissiveIntensity=1.35;coreMat.envMapIntensity=1.6;
+lo(new T.Mesh(new T.SphereGeometry(.6,24,16),coreMat),new V(0,0,0));
+[[14,.9,.12,0,0,.8],[10,.62,.1,PI/2,0,-1.1],[12,.5,.1,0,PI/2,1.5]].forEach(([n,r,d,x,y,v],i)=>lo(new T.Mesh(gearGeo(n,r,d),i%2?oC:oB),new V(0,0,0),new Q().setFromEuler(new T.Euler(x,y,0)),v));
+[1.2,1.9].forEach((th,i)=>{const r=rx*Math.sin(th)*1.04,m=new T.Mesh(new T.TorusGeometry(1,.08,8,48).rotateX(PI/2),i?oC:oB);m.scale.set(r,1,r*1.0);lo(m,new V(0,ry*Math.cos(th),0))});
+const eyeM=new T.MeshStandardMaterial({color:0x0a2834,metalness:.35,roughness:.04,transparent:true,opacity:.55,envMapIntensity:1.6}),irisM=M(0xffb040,.25,.22,0xff9a20);irisM.emissiveIntensity=1.1;irisM.envMapIntensity=1.3;
+[-1,1].forEach(s=>{const th=1.5,ph=PI/2+s*.55,P=new V(rx*Math.sin(th)*Math.cos(ph),ry*Math.cos(th),rx*Math.sin(th)*Math.sin(ph)).multiplyScalar(1.05),nr=P.clone().normalize();
+ lo(new T.Mesh(new T.SphereGeometry(.38,20,14),eyeM),P);
+ o3.position.copy(P);o3.lookAt(P.clone().add(nr));lo(new T.Mesh(gearGeo(10,.2,.05),irisM),P.clone().add(nr.multiplyScalar(.3)),o3.quaternion.clone(),s*2)});
+lo(new T.Mesh(new T.ConeGeometry(.35,.8,10).rotateX(PI),oZ),new V(0,-1.65,0));
+{const k=new T.Group(),sh=new T.Mesh(new T.CylinderGeometry(.07,.07,.7,8).rotateX(PI/2),oB),bw=new T.Mesh(new T.BoxGeometry(1,.1,.18),oB);sh.position.z=.2;bw.position.z=.62;k.add(sh,bw);[-.42,.42].forEach(x=>{const c=new T.Mesh(new T.TorusGeometry(.14,.05,6,16),oB);c.position.set(x,0,.62);k.add(c)});lo(k,new V(0,ry+.15,0),new Q().setFromEuler(new T.Euler(-PI/2,0,0)),.5)}
+[-1,1].forEach(s=>{const th=1.5,ph=PI/2+s*.55,P=new V(rx*Math.sin(th)*Math.cos(ph),ry*Math.cos(th),rx*Math.sin(th)*Math.sin(ph)).multiplyScalar(1.05),nr=P.clone().normalize();o3.position.copy(P);o3.lookAt(P.clone().add(nr));lo(new T.Mesh(new T.BoxGeometry(.34,.07,.05),M(0x050505,.1,.5,0x000000)),P.clone().add(nr.multiplyScalar(.345)),o3.quaternion.clone(),0)});
+const coreS=new T.Sprite(new T.SpriteMaterial({map:warm,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:.35}));coreS.scale.set(5,5,1);scene.add(coreS);
+function applyPal(k){const P=PAL[k];palIdx=k;oB.color.setHex(P.b);oC.color.setHex(P.c);oZ.color.setHex(P.z);oW.color.setHex(P.w);
+ oB.emissive.setHex(P.b).multiplyScalar(.12);oC.emissive.setHex(P.c).multiplyScalar(.12);oZ.emissive.setHex(P.z).multiplyScalar(.1);
+ P.pc.forEach((h,i)=>pc[i].setHex(h));PL.forEach((p,i)=>plM.setColorAt(i,pc[PLI[i]]));plM.instanceColor.needsUpdate=true;
+ cA.setHex(P.a);cB.setHex(P.k);irisM.color.setHex(P.i);irisM.emissive.setHex(P.i);coreMat.color.setHex(P.core);coreMat.emissive.setHex(P.core);coreS.material.color.setHex(P.core);
+ const b=document.getElementById('cw');if(b)b.textContent='Colors: '+P.n}
+coreMat.envMap=warmEnv;irisM.envMap=warmEnv;applyPal(0);
+const shk=new T.Mesh(new T.RingGeometry(.96,1,96),new T.MeshBasicMaterial({color:0x9ff0ff,transparent:true,opacity:0,side:T.DoubleSide,blending:T.AdditiveBlending,depthWrite:false,fog:false}));shk.rotation.x=-PI/2;scene.add(shk);
+const nParts=NT*NS*5+NT*5+NT*NG+PL.length+NM+loose.length;
+document.getElementById('cnt').textContent='Eight arms · '+nParts+' moving parts · free 3D swim';
+
+// === MANTA RAYS · DISCOVERY CARDS · PHOTO MODE · NEXT-SITE COMPASS ===
+const MN=[];
+{const mm=new T.MeshStandardMaterial({color:0x2c3e4c,metalness:.15,roughness:.5,side:T.DoubleSide,emissive:0x0a1620,envMapIntensity:.8}),NR=28;
+ for(let k=0;k<3;k++){const pa=new Float32Array((NR+1)*3),idx=[],base=[];
+  for(let i=0;i<NR;i++){const a=i/NR*PI*2,c=Math.cos(a),sn=Math.sin(a);base.push(Math.sign(c)*Math.pow(Math.abs(c),1.15)*3,(sn>0?1.3:-1.5)*Math.pow(Math.abs(sn),1.15));idx.push(NR,i,(i+1)%NR)}
+  base.push(0,0);
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pa,3));g.setIndex(idx);
+  const grp=new T.Group(),tail=new T.Mesh(new T.ConeGeometry(.07,3.2,5).rotateX(-PI/2),mm);tail.position.z=-3.1;grp.add(new T.Mesh(g,mm),tail);grp.scale.setScalar(1.6+k*.5);scene.add(grp);
+  MN.push({g,grp,pa,base,R:38+k*17,y:9+k*5,w:(.022+k*.006)*(k==1?-1:1),ph:k*2.1})}}
+function mantas(st){MN.forEach(m=>{const a=st*m.w+m.ph,P=m.pa,B=m.base;
+ for(let i=0;i<=28;i++){const x=B[i*2],f=Math.pow(Math.abs(x)/3,1.4);P[i*3]=x;P[i*3+1]=f*.9*Math.sin(st*1.5+m.ph-Math.abs(x)*.7);P[i*3+2]=B[i*2+1]}
+ m.g.attributes.position.needsUpdate=true;m.g.computeVertexNormals();
+ m.grp.position.set(px+Math.cos(a)*m.R,m.y+py*.2+Math.sin(st*.3+m.ph)*1.5,pz+Math.sin(a)*m.R);
+ m.grp.rotation.y=m.w>0?-a:-a+PI;m.grp.rotation.z=Math.sin(st*.5+m.ph)*.12})}
+let shot=false,foundT=0;const foundEl=document.getElementById('found');
+document.getElementById('ph').onclick=()=>{try{setMenuOpen(false)}catch(e){}setTimeout(()=>{shot=true},450)};
+function chimeFound(){try{if(typeof on==='undefined'||!on||!ac)return;[523,659,784,1047].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.11;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.1,n+.04);g.gain.exponentialRampToValueAtTime(.0001,n+2);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.1)})}catch(e){}}
+function showFound(lm){const all=landmarks.every(l=>l.seen);foundEl.querySelector('small').textContent=all?'The deep is charted':'Site discovered';foundEl.querySelector('b').textContent=all?'Every site found':lm.name;foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),4200);chimeFound()}
+function nextSite(){let b=null,d=1e9;landmarks.forEach(l=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l}}});if(!b)return 'All sites found';const ang=Math.atan2(b.x-px,-(b.z-pz)),dirs=['N','NE','E','SE','S','SW','W','NW'];return 'Next site: '+Math.round(d)+' m '+dirs[Math.round(((ang+PI*2)%(PI*2))/(PI/4))%8]}
+// === NEW POINTS OF INTEREST: clock tower, crystal garden, whale graveyard, lighthouse ===
+const POI={tg:[]};
+{const gs=(col,sz,x,y,z,op)=>{const sp=new T.Sprite(new T.SpriteMaterial({map:white,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op}));sp.scale.set(sz,sz,1);sp.position.set(x,y,z);scene.add(sp);return sp};
+ // sunken clock tower
+ const tw=new T.Group();tw.position.set(-80,0,-70);scene.add(tw);
+ tw.add(new T.Mesh(new T.CylinderGeometry(2.2,3,28,12).translate(0,14,0),bronze));
+ [6,12,18,24].forEach(y=>{const r=new T.Mesh(new T.TorusGeometry(2.7-y*.03,.35,6,20).rotateX(PI/2),brass);r.position.y=y;tw.add(r)});
+ [[7,0,22,0],[3.6,6.6,29,1],[4.6,-6.4,13,2]].forEach(([r,x,y,i])=>{const g=new T.Mesh(gearGeo(i?16:24,1,.5),i%2?brass:bronze);g.scale.setScalar(r);const gp=new T.Group();gp.position.set(x,y,3.2);gp.add(g);tw.add(gp);POI.tg.push({g:gp,v:(i%2?-1:1)*.25*(7/r)})});
+ POI.tface=new T.Mesh(new T.CircleGeometry(6,32),new T.MeshBasicMaterial({color:0x40e0ff,transparent:true,opacity:.35,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}));POI.tface.position.set(0,22,2.6);tw.add(POI.tface);
+ gs(0x40e0ff,30,-80,22,-66,.4);
+ if(!COARSE){const l=new T.PointLight(0x40e0ff,2,60);l.position.set(-80,22,-64);scene.add(l)}
+ // crystal garden
+ const cg=new T.Group();cg.position.set(62,0,52);scene.add(cg);
+ const cm=[0xc060ff,0x40e0ff,0xff60c0].map(c=>new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.7,roughness:.15,metalness:.1,transparent:true,opacity:.88}));
+ for(let i=0;i<16;i++){const a=rnd()*PI*2,d=rnd()*9,h=3+rnd()*Math.max(2,12-d*.7),w=.7+rnd()*1.2,m=new T.Mesh(new T.ConeGeometry(1,1,6).translate(0,.5,0),cm[i%3]);m.position.set(Math.cos(a)*d,0,Math.sin(a)*d);m.scale.set(w,h,w);m.rotation.set((rnd()-.5)*.5,rnd()*3,(rnd()-.5)*.5);cg.add(m)}
+ POI.cg=gs(0xc060ff,40,62,6,52,.35);
+ if(!COARSE){POI.cl=new T.PointLight(0xc060ff,2.5,50);POI.cl.position.set(62,7,52);scene.add(POI.cl)}
+ // whale graveyard
+ const wh=new T.Group();wh.position.set(-62,.5,64);wh.rotation.y=.5;scene.add(wh);
+ const bm=new T.MeshStandardMaterial({color:0xe6dcc4,roughness:.85,metalness:0,emissive:0x1a1710});
+ for(let i=0;i<24;i++){const x=-16+i*1.4,sc2=1.05-i*.018,v=new T.Mesh(new T.SphereGeometry(.6*sc2,8,6),bm);v.position.set(x,1.2,0);wh.add(v);
+  if(i>2&&i<17&&i%2){const rb=new T.Mesh(new T.TorusGeometry(6.5*Math.sin((i-2)/16*PI)*.9+1.2,.28,6,18,PI).rotateY(PI/2),bm);rb.position.set(x,1.2,0);wh.add(rb)}}
+ const sk=new T.Mesh(new T.SphereGeometry(3.6,12,8),bm);sk.scale.set(1.6,.9,1);sk.position.set(-19,1.8,0);wh.add(sk);
+ // deep lighthouse with a sweeping beam
+ const lb=new T.Group();lb.position.set(95,0,15);scene.add(lb);
+ [[2.8,2.2,0xf2ead8],[2.2,1.8,0xc44a3a],[1.8,1.6,0xf2ead8]].reduce((y,[r1,r2,c])=>{lb.add(new T.Mesh(new T.CylinderGeometry(r2,r1,10,14).translate(0,y+5,0),new T.MeshStandardMaterial({color:c,roughness:.6,metalness:.2,emissive:0x1a1410})));return y+10},0);
+ const lampM=new T.Mesh(new T.SphereGeometry(1.9,12,8),new T.MeshBasicMaterial({color:0xfff2a0}));lampM.position.y=31;lb.add(lampM);
+ POI.lh=new T.Group();POI.lh.position.y=31;lb.add(POI.lh);
+ [0,PI].forEach(a=>{const b=new T.Mesh(new T.ConeGeometry(7,70,16,1,true).rotateZ(PI/2).translate(35,0,0),new T.MeshBasicMaterial({color:0xfff0b0,transparent:true,opacity:.12,blending:T.AdditiveBlending,side:T.DoubleSide,depthWrite:false}));b.rotation.y=a;POI.lh.add(b)});
+ gs(0xffe08a,26,95,31,15,.7)}
+function poi(st){POI.tg.forEach(o=>o.g.rotation.z=st*o.v);POI.lh.rotation.y=st*.6;POI.tface.material.opacity=.3+.12*Math.sin(st*.9);POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7)}
+// UI + camera + 3D controls
+const nameEl=document.getElementById('name'),descEl=document.getElementById('desc'),tl=document.getElementById('tl'),pl=document.getElementById('pl'),bars=[],bgEl=document.getElementById('bg');
+let t=0,st=0,wt=0,playing=false,cur=-1,az=.35,el=.04,zoom=1,drag=null,manual=false,manP=0,manTarget=0,lastE=0,camOff=0,chase=true,px=0,py=4.6,pz=0,vx=0,vy=0,vz=0,yw=0,wr=0,keys={};
+// smooth camera state
+let camAz=az,camEl=el,camZoom=zoom,camPx=px,camPy=py,camPz=pz;
+let userPaused=true,autoPaused=false,idleT=0;
+const qY=new Q();
+const helpEl=document.getElementById('help');
+let helpT=0;
+
+S.forEach((s,i)=>{const b=document.createElement('button');b.setAttribute('aria-label',s[0]);b.style.flex=s[2];b.innerHTML='<i><b></b></i>';b.onclick=()=>{manual=false;t=B[i]+.2};tl.appendChild(b);bars.push(b.firstChild.firstChild)});
+const closeMenu=()=>{try{setMenuOpen(false)}catch(e){}};
+const toggle=()=>{
+  if(playing){playing=false;userPaused=true;pl.textContent='Play animation'}
+  else{if(manual){manual=false;t=manP>.5?8.5:0}playing=true;userPaused=false;pl.textContent='Pause animation'}
+  closeMenu();
+};pl.onclick=toggle;
+const goManual=v=>{if(!manual){manual=true;manP=lastE}playing=false;userPaused=true;t=0;manTarget=v;pl.textContent='Play animation';closeMenu()};
+document.getElementById('dis').onclick=()=>goManual(1);document.getElementById('rea').onclick=()=>goManual(0);
+// minimap — top-down radar of landmarks
+const mmapC=document.getElementById('mmap'),mmapX=mmapC.getContext('2d');
+const MAP_R=90;
+const landmarks=[
+  {id:'ship',x:22,z:-18,c:'#e8bf6a',r:3.5,name:'Main shipwreck',radius:12,seen:false},
+  {id:'chest',x:18,z:-22,c:'#ffd040',r:2.8,name:'Treasure chest',radius:8,seen:false},
+  {id:'ruins',x:-30,z:25,c:'#30d0c0',r:3.5,name:'Ancient ruins',radius:14,seen:false},
+  {id:'trench',x:52,z:-20,c:'#40ffc0',r:3,name:'Deep trench',radius:16,seen:false},
+  {id:'wreck2',x:-35,z:40,c:'#c4a070',r:3,name:'Second wreck',radius:12,seen:false},
+  {id:'cave1',x:-25,z:8,c:'#609080',r:2.2,name:'Cave — west',radius:10,seen:false},
+  {id:'cave2',x:30,z:-20,c:'#609080',r:2.2,name:'Cave — east',radius:10,seen:false},
+  {id:'cave3',x:5,z:35,c:'#609080',r:2.2,name:'Cave — north',radius:10,seen:false},
+  {id:'cave4',x:-40,z:-30,c:'#609080',r:2.2,name:'Cave — south',radius:10,seen:false},
+  {id:'tower',x:-80,z:-70,c:'#ff9a4a',r:3.4,name:'Sunken clock tower',radius:18,seen:false},
+  {id:'crystals',x:62,z:52,c:'#c070ff',r:3.4,name:'Crystal garden',radius:18,seen:false},
+  {id:'whale',x:-62,z:64,c:'#f4ecd8',r:3.4,name:'Whale graveyard',radius:20,seen:false},
+  {id:'lighthouse',x:95,z:15,c:'#fff08a',r:3.4,name:'Deep lighthouse',radius:18,seen:false},
+];
+let mapPageOpen=false;
+const mapLegendEl=document.getElementById('mapLegend');
+const mapCountEl=document.getElementById('mapCount');
+const mapBarEl=document.getElementById('mapBar');
+function updateMapLegend(){
+  if(!mapLegendEl)return;
+  const seen=landmarks.filter(l=>l.seen).length;
+  if(mapCountEl)mapCountEl.innerHTML='Discovered <b>'+seen+'</b> / '+landmarks.length;
+  if(mapBarEl)mapBarEl.style.width=(seen/landmarks.length*100)+'%';
+  mapLegendEl.innerHTML=landmarks.map(lm=>
+    '<div class="'+(lm.seen?'visited':'')+'"><span class="dot" style="background:'+lm.c+';color:'+lm.c+'"></span>'+
+    (lm.seen?lm.name:'???')+'<span class="seen">'+(lm.seen?'Found':'—')+'</span></div>'
+  ).join('');
+}
+updateMapLegend();
+function checkDiscoveries(px,pz){
+  let changed=false;
+  landmarks.forEach(lm=>{
+    if(!lm.seen&&Math.hypot(lm.x-px,lm.z-pz)<lm.radius){lm.seen=true;changed=true;showFound(lm)}
+  });
+  if(changed)updateMapLegend();
+}
+function drawMinimap(px,pz,yaw){
+  checkDiscoveries(px,pz);
+  if(!mapPageOpen||!mmapX)return;
+  const W=168,cx=W/2,cy=W/2,sc=W/(MAP_R*2);
+  mmapX.clearRect(0,0,W,W);
+  mmapX.beginPath();mmapX.arc(cx,cy,cx-1,0,PI*2);mmapX.fillStyle='rgba(8,28,36,.92)';mmapX.fill();
+  mmapX.strokeStyle='rgba(232,191,106,.14)';mmapX.lineWidth=1;
+  for(let i=1;i<=2;i++){mmapX.beginPath();mmapX.arc(cx,cy,(MAP_R*i/2)*sc,0,PI*2);mmapX.stroke()}
+  const nowT=performance.now()/300;
+  landmarks.forEach(lm=>{
+    const dx=(lm.x-px)*sc,dz=(lm.z-pz)*sc,d=Math.hypot(dx,dz),edge=d>cx-9,k=edge?(cx-9)/d:1,mx=cx+dx*k,my=cy+dz*k;
+    const pulse=lm.seen?1:1+.28*Math.sin(nowT+lm.x),rr=(edge?2.6:lm.r*.85+1)*pulse;
+    mmapX.beginPath();mmapX.arc(mx,my,rr+3.5,0,PI*2);mmapX.fillStyle=lm.c+(lm.seen?'30':'55');mmapX.fill();
+    mmapX.beginPath();mmapX.arc(mx,my,rr,0,PI*2);mmapX.fillStyle=lm.seen?lm.c:lm.c+'d0';mmapX.fill();
+    mmapX.lineWidth=lm.seen?1.6:1;mmapX.strokeStyle=lm.seen?'#ffffff':'rgba(255,255,255,.5)';mmapX.stroke();
+  });
+  mmapX.fillStyle='rgba(232,191,106,.7)';mmapX.font='10px system-ui,sans-serif';mmapX.textAlign='center';mmapX.fillText('N',cx,12);
+  if(typeof sharks!=='undefined')sharks.forEach(s=>{
+    const mx=cx+(s.m.position.x-px)*sc, my=cy+(s.m.position.z-pz)*sc;
+    if(Math.hypot(mx-cx,my-cy)>cx-4)return;
+    mmapX.beginPath();mmapX.arc(mx,my,2,0,PI*2);mmapX.fillStyle='#8899aa';mmapX.fill();
+  });
+  if(typeof turtles!=='undefined')turtles.forEach(t=>{
+    const mx=cx+(t.m.position.x-px)*sc, my=cy+(t.m.position.z-pz)*sc;
+    if(Math.hypot(mx-cx,my-cy)>cx-4)return;
+    mmapX.beginPath();mmapX.arc(mx,my,2,0,PI*2);mmapX.fillStyle='#6aaa70';mmapX.fill();
+  });
+  mmapX.save();mmapX.translate(cx,cy);mmapX.rotate(yaw);
+  mmapX.beginPath();mmapX.moveTo(0,-6);mmapX.lineTo(4.5,5);mmapX.lineTo(0,3);mmapX.lineTo(-4.5,5);mmapX.closePath();
+  mmapX.fillStyle='#e8bf6a';mmapX.fill();
+  mmapX.restore();
+}
+// high-end menu
+const menuBtn=document.getElementById('menuBtn'),menuPanel=document.getElementById('menuPanel'),menuScrim=document.getElementById('menuScrim');
+function setMenuOpen(open){
+  menuPanel.classList.toggle('open',open);
+  menuBtn.classList.toggle('open',open);
+  menuScrim.classList.toggle('open',open);
+  menuBtn.setAttribute('aria-expanded',String(open));
+  menuBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
+}
+menuBtn.addEventListener('click',()=>setMenuOpen(!menuPanel.classList.contains('open')));
+menuScrim.addEventListener('click',()=>setMenuOpen(false));
+addEventListener('keydown',e=>{if(e.code==='Escape'&&menuPanel.classList.contains('open'))setMenuOpen(false)});
+const menuBody=document.getElementById('menuBody');
+const mapDock=document.getElementById('mapDock');
+menuPanel.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    menuPanel.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    menuPanel.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    const page=document.getElementById('page-'+btn.dataset.page);
+    if(page)page.classList.add('active');
+    mapPageOpen=btn.dataset.page==='map';
+    if(mapDock)mapDock.classList.toggle('open', mapPageOpen);
+    if(menuBody)menuBody.scrollTop=0;
+  });
+});
+const AK=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','Space','ControlLeft','ControlRight'];
+document.getElementById('cw').onclick=()=>{applyPal((palIdx+1)%PAL.length);try{setMenuOpen(false)}catch(e){}};
+addEventListener('keydown',e=>{if(e.code==='KeyP'&&!e.repeat)shot=true;if(e.code==='KeyV'&&!e.repeat)toggleCam();if(e.code==='KeyC'&&!e.repeat)applyPal((palIdx+1)%PAL.length);if(AK.includes(e.code)){keys[e.code]=true;e.preventDefault()}if(e.code==='ShiftLeft'||e.code==='ShiftRight')keys[e.code]=true;if(e.code==='KeyH'){px=pz=0;py=4.6;vx=vy=vz=0}});
+addEventListener('keyup',e=>{keys[e.code]=false});addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+document.querySelectorAll('#dp button').forEach(b=>{const k=b.dataset.k,f=v=>e=>{keys[k]=v;e.preventDefault()};b.addEventListener('pointerdown',f(true));['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,f(false)))});
+let ac=null,on=false,mg,nf,ambG,whooshG,whooshF,tk=0,pt=0,bubT=0;const sb=document.getElementById('sn');
+function initAudio(){
+  if(ac)return;
+  ac=new(window.AudioContext||window.webkitAudioContext)();
+  mg=ac.createGain();mg.gain.value=0;mg.connect(ac.destination);
+  // master lowpass — underwater muffling
+  nf=ac.createBiquadFilter();nf.type='lowpass';nf.frequency.value=900;nf.Q.value=.7;
+  nf.connect(mg);
+  // brown-ish ambient pressure hum
+  const b=ac.createBuffer(1,ac.sampleRate*3,ac.sampleRate),d=b.getChannelData(0);
+  let l=0;for(let i=0;i<d.length;i++){l=(l+.015*(Math.random()*2-1))/1.015;d[i]=l*2.8}
+  const s=ac.createBufferSource();s.buffer=b;s.loop=true;
+  ambG=ac.createGain();ambG.gain.value=.35;
+  const ambF=ac.createBiquadFilter();ambF.type='lowpass';ambF.frequency.value=180;
+  s.connect(ambF);ambF.connect(ambG);ambG.connect(nf);s.start();
+  // movement whoosh (filtered noise, gain driven by speed)
+  const wb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),wd=wb.getChannelData(0);
+  for(let i=0;i<wd.length;i++)wd[i]=(Math.random()*2-1)*.4;
+  const ws=ac.createBufferSource();ws.buffer=wb;ws.loop=true;
+  whooshF=ac.createBiquadFilter();whooshF.type='bandpass';whooshF.frequency.value=400;whooshF.Q.value=.8;
+  whooshG=ac.createGain();whooshG.gain.value=0;
+  ws.connect(whooshF);whooshF.connect(whooshG);whooshG.connect(nf);ws.start();
+}
+sb.onclick=()=>{initAudio();on=!on;if(ac.state==='suspended')ac.resume();mg.gain.setTargetAtTime(on?.55:0,ac.currentTime,.35);sb.textContent=on?'Sound on':'Sound';sb.setAttribute('aria-pressed',String(on))};
+function click(f,v,d){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g);g.connect(nf);o.start();o.stop(ac.currentTime+d)}
+function softTone(f,v,dur){if(!ac||!on)return;const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(v,ac.currentTime+.05);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);o.connect(g);g.connect(nf);o.start();o.stop(ac.currentTime+dur+.05)}
+function audio(dt,E,spd){
+  if(!on||!ac)return;
+  // deeper muffling when deeper / more open filter during explode
+  const depthM=cl((py-2)/30);
+  nf.frequency.setTargetAtTime(500+400*(1-depthM)+1200*E,ac.currentTime,.25);
+  // whoosh tracks swim speed
+  const wTarget=Math.min(.22,spd*.018);
+  whooshG.gain.setTargetAtTime(wTarget,ac.currentTime,.1);
+  whooshF.frequency.setTargetAtTime(280+spd*35,ac.currentTime,.15);
+  // gear ticks — denser during disassemble
+  tk+=dt*(2+14*E+spd*.15);
+  while(tk>1){tk--;click(800+Math.random()*1800,.02+E*.025,.015+Math.random()*.02)}
+  // sparse bubble pops
+  bubT+=dt;if(bubT>1.2+Math.random()*2){bubT=0;softTone(600+Math.random()*900,.03,.12)}
+  // awake chord
+  if(pt<19&&t>=19&&t<19.5)[392,523,659,784].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.1;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.1,n+.05);g.gain.exponentialRampToValueAtTime(.0001,n+2.8);o.connect(g);g.connect(nf);o.start(n);o.stop(n+2.9)});
+  pt=t;
+}
+addEventListener('keydown',e=>{if(e.code==='Space'&&e.target===document.body){e.preventDefault()}}); // Space now used for up
+const camBtn=document.getElementById("cm");const toggleCam=()=>{chase=!chase;camBtn.textContent="Cam: "+(chase?"Chase":"Free")};camBtn.onclick=()=>{toggleCam();try{setMenuOpen(false)}catch(e){}};let startAlign=0,wasMove=false;
+const joy={x:0,y:0};let touchUp=0,touchDn=0,touchSprint=false;
+const ptrs=new Map();let pinch=0;const LK=COARSE?1.25:1;
+cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});cv.setPointerCapture(e.pointerId);if(ptrs.size===1)drag={x:e.clientX,y:e.clientY};else{drag=null;const[a,b]=[...ptrs.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}});
+cv.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;
+ if(ptrs.size>=2){p.x=e.clientX;p.y=e.clientY;const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch>0&&d>0)zoom=Math.min(1.45,Math.max(.55,zoom*pinch/d));pinch=d;return}
+ if(!drag)return;az-=(e.clientX-drag.x)*.006*LK;el=Math.min(1.15,Math.max(-.85,el+(e.clientY-drag.y)*.0045*LK));drag.x=e.clientX;drag.y=e.clientY;p.x=e.clientX;p.y=e.clientY});
+['pointerup','pointercancel'].forEach(n=>cv.addEventListener(n,e=>{ptrs.delete(e.pointerId);const r=[...ptrs.values()];drag=r.length===1?{x:r[0].x,y:r[0].y}:null;pinch=0}));
+(function(){const base=document.getElementById('joy'),knob=document.getElementById('knob'),tip=document.getElementById('tip');let id=null,cx=0,cy=0;const RR=48;
+ const hideTip=()=>{tip.style.opacity=0;setTimeout(()=>tip.style.display='none',900)};
+ if(COARSE){tip.style.display='block';setTimeout(hideTip,9000)}
+ const set=e=>{let dx=e.clientX-cx,dy=e.clientY-cy;const d=Math.hypot(dx,dy);if(d>RR){dx*=RR/d;dy*=RR/d}knob.style.transform='translate('+dx+'px,'+dy+'px)';joy.x=dx/RR;joy.y=-dy/RR};
+ base.addEventListener('pointerdown',e=>{id=e.pointerId;base.setPointerCapture(id);const r=base.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;set(e);e.preventDefault();hideTip()});
+ base.addEventListener('pointermove',e=>{if(e.pointerId===id)set(e)});
+ const end=e=>{if(e.pointerId!==id)return;id=null;joy.x=joy.y=0;knob.style.transform='translate(0,0)'};
+ ['pointerup','pointercancel','lostpointercapture'].forEach(n=>base.addEventListener(n,end));
+ [['bUp',v=>touchUp=v],['bDn',v=>touchDn=v],['bSp',v=>touchSprint=!!v]].forEach(([i,f])=>{const b=document.getElementById(i);b.addEventListener('pointerdown',e=>{b.setPointerCapture(e.pointerId);f(1);b.classList.add('on');e.preventDefault();hideTip()});['pointerup','pointercancel','lostpointercapture'].forEach(n=>b.addEventListener(n,()=>{f(0);b.classList.remove('on')}))});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){joy.x=joy.y=0;touchUp=touchDn=0;touchSprint=false}});
+})();
+cv.addEventListener('wheel',e=>{zoom=Math.min(1.45,Math.max(.55,zoom*(1+e.deltaY*.001)));e.preventDefault()},{passive:false});
+function resize(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+
+const p=new V(),dr=new V(),mid=new V(),end=new V(),lx=new V(),lz=new V(),sc=new V(),tp=new V(),bd=new V(),Dn=new V(0,-1,0),Y=new V(0,1,0),
+qa=new Q(),qr=new Q(),qf=new Q(),qg=new Q(),qx=new Q().setFromAxisAngle(Y,PI/2),mat=new T.Matrix4();
+let last=performance.now();
+function frame(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ // world time always advances; story timeline only when playing
+ st+=dt;
+ let E=t<4?0:t<8.5?sm((t-4)/4.5):t<14.5?1:t<19?1-sm((t-14.5)/4.5):0;
+ if(manual){manP+=Math.sign(manTarget-manP)*Math.min(Math.abs(manTarget-manP),dt/4.5);E=sm(manP)}
+ lastE=E;
+ if(playing){t=(t+dt)%23;wt+=dt*(1-.7*E)}
+ else{wt+=dt*.7} // slight residual arm drift when paused
+
+ // === IMPROVED 3D SWIMMING CONTROLS ===
+ // Camera-relative horizontal + dedicated vertical + optional look-directed thrust
+ const ix=Math.max(-1,Math.min(1,(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+joy.x));
+ const iz=Math.max(-1,Math.min(1,(keys.ArrowUp||keys.KeyW?1:0)-(keys.ArrowDown||keys.KeyS?1:0)+joy.y));
+ const iy=Math.max(-1,Math.min(1,(keys.KeyQ||keys.Space?1:0)-(keys.KeyE||keys.ControlLeft||keys.ControlRight?1:0)+touchUp-touchDn));
+
+ // horizontal movement relative to yaw (level plane — no accidental climb)
+ const wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
+ let mx,mz;
+ if(chase){
+  // CHASE CAM: left/right steer the octopus, up/down swim forward/back along its heading
+  const sprint0=keys.ShiftLeft||keys.ShiftRight||touchSprint;
+  yw-=ix*(Math.abs(iz)<.05?2.4:(sprint0?1.9:1.5))*dt;
+  const thr=iz<0?iz*.55:iz;
+  mx=Math.sin(yw)*thr;mz=Math.cos(yw)*thr;
+ }else{
+  // FREE CAM: screen-relative movement (original behaviour)
+  const fx=-Math.sin(az),fz=-Math.cos(az);
+  mx=fx*iz-fz*ix;mz=fz*iz+fx*ix;const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
+ }
+
+ // look-directed vertical ONLY when pitch is intentional (deadzone kills forward-climb drift)
+ const pitchRaw=Math.sin(el);
+ const pitchDead=Math.abs(pitchRaw)>0.22?pitchRaw:0; // ~13° deadzone
+ const lookVert=iz*pitchDead*0.55; // weaker than before, only when clearly pitched
+
+ const sprint=keys.ShiftLeft||keys.ShiftRight||touchSprint;
+ const topH=sprint?26:11.5;
+ const topV=sprint?16:8;
+ const ka=Math.min(1,dt*4.0);
+
+ // target velocities — Q/E/Space/Ctrl are primary vertical; look is secondary
+ const tx=mx*topH;
+ const tz=mz*topH;
+ const ty=iy*topV + lookVert*topV;
+
+ // snappy horizontal, slightly softer vertical (water resistance)
+ vx+=(tx-vx)*ka;
+ vz+=(tz-vz)*ka;
+ vy+=(ty-vy)*ka*0.75;
+
+ // strong vertical damping so residual climb dies quickly when not holding up/down
+ if(Math.abs(iy)<0.05 && Math.abs(lookVert)<0.05){
+   vy*=(1-dt*3.2);
+ }
+
+ const spd=Math.hypot(vx,vz,vy);
+
+ // auto-pause disassemble story when player swims; resume after brief idle
+ const moving=spd>1.1||iy!==0||iz!==0||ix!==0;
+
+ px+=vx*dt; py+=vy*dt; pz+=vz*dt;
+
+ // soft depth limits
+ if(py<1.4){py=1.4;vy=Math.max(0,vy)}
+ if(py>36){py=36;vy=Math.min(0,vy)}
+ const pr=Math.hypot(px,pz);if(pr>28000){px*=28000/pr;pz*=28000/pr}
+ wr+=spd*dt*7.5;
+ if(chase){
+  // camera swings round behind the octopus as it turns; dragging looks around, then it recentres
+  const steerMove=Math.abs(ix)>.02||Math.abs(iz)>.02;
+  if(steerMove&&!wasMove&&Math.abs(wrapA(az-(yw+PI)))>1.0)startAlign=.6;
+  wasMove=steerMove;
+  if(startAlign>0){startAlign-=dt;yw+=wrapA(az+PI-yw)*Math.min(1,dt*8);camOff=0}
+  else if(drag||(!steerMove&&spd<.5)){camOff=wrapA(az-(yw+PI))}
+  else{camOff*=Math.max(0,1-dt*.7);az+=wrapA(yw+PI+camOff-az)*Math.min(1,dt*7)}
+ }else if(spd>.25){let d=Math.atan2(vx,vz)-yw;d=Math.atan2(Math.sin(d),Math.cos(d));yw+=d*Math.min(1,dt*4.5)}
+ qY.setFromAxisAngle(Y,yw);
+
+ // body bob + swim pulse. bd.y carries ONLY the small animation bob (like the original).
+ // py is the player-controlled height. Original neutral height was ~4.6, so we offset by (py-4.6).
+ const cu=Math.pow(Math.max(0,Math.sin(st*(.85+1.5*Math.min(1,spd/7)))),3)*(1-E);
+ const bob=Math.sin(st*1.25)*.18 + cu*.55;
+ bd.set(px, bob, pz);
+ const yOff=py-4.6;          // vertical shift from original neutral height
+ CEN.set(px, 4.6+yOff+bob, pz); // explode center at head height
+
+ lamp.position.set(px+Math.sin(yw)*.9, 5.3+yOff+bob, pz+Math.cos(yw)*.9);
+ lamp.target.position.set(px+Math.sin(yw)*9, yOff+bob, pz+Math.cos(yw)*9);
+
+ // arms — richer multi-frequency undulation + velocity lean
+ for(let i=0;i<NT;i++){const phi0=i/NT*PI*2+yw,sg=i%2?1:-1;
+  p.set(Math.cos(phi0)+bd.x, 4.2+bd.y+yOff, Math.sin(phi0)+bd.z);
+  for(let j=0;j<NS;j++){const u=j/(NS-1),id=i*NS+j,
+   // layered waves + secondary lag per arm (organic follow-through)
+   lagA=i*.17,
+   psi=-1.05+1.45*u
+     +.32*Math.sin(wt*1.65-u*5.2+lagA)*(.38+u)
+     +.42*u*u*Math.sin(wt*.75+lagA*.8)
+     +.14*Math.sin(wt*3.1-u*8+lagA*1.2)*u*u
+     +.06*Math.sin(wt*5.2-u*11+i)*u*u*u
+     -.65*cu*u
+     +.6*Math.min(1,spd/10)*u*u,
+   ph=phi0+sg*(.28*u+.38*u*u)+.3*Math.sin(wt*1.15-u*4.2+lagA)*u+.1*Math.sin(wt*2.4+lagA)*.15*u,
+   len=.3*(1-.5*u),r=.27*(1-.84*u)+.025;
+   dr.set(Math.cos(psi)*Math.cos(ph),Math.sin(psi),Math.cos(psi)*Math.sin(ph));
+   // lean arms opposite travel for propulsion silhouette
+   if(spd>.1){
+     const inv=1/spd, lean=.65*u*u;
+     dr.x-=vx*inv*lean; dr.y-=vy*inv*lean*.85; dr.z-=vz*inv*lean;
+     dr.normalize();
+   }
+   mid.copy(p).addScaledVector(dr,len/2);end.copy(p).addScaledVector(dr,len);p.copy(end);
+   qa.setFromUnitVectors(Dn,dr);qr.setFromAxisAngle(Dn,phi0+PI/2);qf.copy(qa).multiply(qr);
+   xf(Xs,id,mid,qf,E,st);mat.compose(op,oq,sc.set(r,len*1.18,r));segM.setMatrixAt(id,mat);
+   xf(Xr,id,end,qf,E,st);mat.compose(op,oq,sc.setScalar(r*1.15));ringM.setMatrixAt(id,mat);
+   mat.compose(op,oq,sc.setScalar(r*1.3));glowM.setMatrixAt(id,mat);cz.copy(cA).lerp(cB,.5+.5*Math.sin(i*2.3+st*.5)).multiplyScalar(Math.pow(Math.max(0,Math.sin(st*3.2-u*9+i*1.1)),4)*1.4+.12);glowM.setColorAt(id,cz);
+   lz.set(0,0,1).applyQuaternion(qf);tp.copy(mid).addScaledVector(lz,r*.95);
+   xf(Xc,id,tp,qf,E,st);mat.compose(op,oq,sc.setScalar(r*.42));cupM.setMatrixAt(id,mat);
+   lx.set(-1,0,0).applyQuaternion(qf);tp.copy(mid).addScaledVector(lx,r*.9);xf(Xo,id,tp,qf,E,st);mat.compose(op,oq,sc.set(r*.1,len*1.05,r*.1));pistM.setMatrixAt(id,mat);
+   if(!(j&1)){const g=i*NG+(j>>1);lx.set(1,0,0).applyQuaternion(qf);tp.copy(mid).addScaledVector(lx,r*1.02);
+    qs.setFromAxisAngle(Z,st*(.8+u)*sg*(j&2?1:-1));qg.copy(qf).multiply(qx).multiply(qs);
+    xf(Xg,g,tp,qg,E,st);mat.compose(op,oq,sc.setScalar(r*.85));gearM.setMatrixAt(g,mat)}}}
+ [segM,ringM,cupM,gearM,pistM,glowM].forEach(m=>m.instanceMatrix.needsUpdate=true);glowM.instanceColor.needsUpdate=true;
+
+ // head gears / plates / loose parts — original used C=(0,5.6,0) + bd
+ MG.forEach((g,i)=>{
+  tp.copy(g.lp).applyQuaternion(qY).add(C).add(bd);
+  tp.y+=yOff;
+  qs.setFromAxisAngle(Z,st*g.v);qg.copy(g.q).multiply(qs).premultiply(qY);
+  xf(Xm,i,tp,qg,E,st);mat.compose(op,oq,sc.setScalar(g.s));mgM.setMatrixAt(i,mat)});
+ mgM.instanceMatrix.needsUpdate=true;
+
+ PL.forEach((pt,i)=>{
+  tp.copy(pt.lp).applyQuaternion(qY).add(C).add(bd);
+  tp.y+=yOff;
+  qg.copy(pt.q).premultiply(qY);
+  xf(Xp,i,tp,qg,E,st);mat.compose(op,oq,pt.s);plM.setMatrixAt(i,mat)});
+ plM.instanceMatrix.needsUpdate=true;
+
+ loose.forEach((l,i)=>{
+  tp.copy(l.lp).applyQuaternion(qY).add(C).add(bd);
+  tp.y+=yOff;
+  qg.copy(l.lq);if(l.sp){qs.setFromAxisAngle(Z,st*l.sp);qg.multiply(qs)}qg.premultiply(qY);
+  xf(Xl,i,tp,qg,E,st);l.o.position.copy(op);l.o.quaternion.copy(oq)});
+
+ const flare=Math.max(0,1-Math.abs(t-19.8)/.8);
+ const sp=t-19;if(sp>0&&sp<1.6){shk.position.set(px,5.6+yOff+bob,pz);shk.scale.setScalar(1+sp*9);shk.material.opacity=.8*(1-sp/1.6)}else shk.material.opacity=0;
+ coreMat.emissiveIntensity=1+.3*Math.sin(st*3)+1.2*flare;irisM.emissiveIntensity=1+2*flare;
+ coreL.position.set(px,5.6+yOff+bob,pz);coreL.intensity=1.4+1.5*flare;
+ coreS.position.set(px,5.6+yOff+bob,pz);coreS.material.opacity=(.3+.3*flare)*(1-E*.7);
+ ruin.forEach(r=>r.m.rotation.z+=dt*r.v);
+ plk.rotation.y+=dt*.01;plk.position.set(px,0,pz);
+ bub.position.set(px,0,pz);
+ sea.position.set(px,0,pz);stx.offset.set(px/10,-pz/10);
+ const wc2=Math.floor(px/CS),wz2=Math.floor(pz/CS);if(wc2!==wcx||wz2!==wcz){wcx=wc2;wcz=wz2;rebuild(wcx,wcz)}world(st);ext(st);
+ // sharks — smooth patrol with body roll and fin animation
+ sharks.forEach((s,si)=>{
+  const a=st*s.speed+s.phase;
+  const rr=s.pathR*(1+.08*Math.sin(a*.5+si));
+  const x=sharkHome.x+Math.cos(a)*rr;
+  const z=sharkHome.z+Math.sin(a)*rr;
+  const y=s.pathY+Math.sin(a*1.4+si)*1.8*s.roam;
+  const sgn=Math.sign(s.speed||1);
+  const tx=-Math.sin(a)*sgn, tz=Math.cos(a)*sgn;
+  s.m.position.set(x,y,z);
+  s.m.rotation.order='YXZ';
+  s.m.rotation.y=Math.atan2(tx,tz);
+  s.m.rotation.z=Math.sin(a*1.8)*.08;
+  s.m.rotation.x=Math.sin(a*1.1)*.05;
+  const ud=s.m.userData;
+  const wag=Math.sin(st*(5.5+si*.4)+si)*0.55;
+  if(ud.tailG)ud.tailG.rotation.y=wag;
+  if(ud.pecLG)ud.pecLG.rotation.x=Math.sin(st*1.8+si)*.12;
+  if(ud.pecRG)ud.pecRG.rotation.x=-Math.sin(st*1.8+si)*.12;
+  if(ud.jaw)ud.jaw.rotation.z=.12+.04*Math.sin(st*.7+si);
+ });
+ // sea turtles — slow graceful arcs
+ turtles.forEach((t,ti)=>{
+  const a=st*t.speed+t.phase;
+  const x=Math.cos(a)*t.pathR, z=Math.sin(a)*t.pathR;
+  const y=t.pathY+Math.sin(a*1.2+ti)*1.2;
+  const sgn=Math.sign(t.speed||1);
+  t.m.position.set(x,y,z);
+  t.m.rotation.order='YXZ';
+  t.m.rotation.y=Math.atan2(-Math.sin(a)*sgn,Math.cos(a)*sgn);
+  t.m.rotation.x=Math.sin(a)*.08;
+  if(t.m.userData.flipG)t.m.userData.flipG.forEach((fg,fi)=>{fg.rotation.z=Math.sin(st*2.5+fi+ti)*.35});
+ });
+ // bioluminescent orbs pulse & drift
+ bioOrbs.forEach((o,i)=>{
+  const u=o.userData;
+  o.position.x=u.bx+Math.sin(st*u.sp+u.ph)*u.amp;
+  o.position.y=u.by+Math.sin(st*u.sp*.7+u.ph)*u.amp*.6;
+  o.position.z=u.bz+Math.cos(st*u.sp*.9+u.ph)*u.amp;
+  o.material.opacity=.35+.35*Math.sin(st*2+u.ph);
+  o.scale.setScalar(.8+.4*Math.sin(st*1.5+u.ph));
+ });
+ // ribbon creatures
+ ribbons.forEach((rg,i)=>{
+  const u=rg.userData,a=st*u.sp+u.ph;
+  rg.position.x=Math.cos(a)*u.pathR+Math.sin(st*.1+i)*20;
+  rg.position.z=Math.sin(a)*u.pathR+Math.cos(st*.1+i)*20;
+  rg.position.y=5+Math.sin(a*1.5+i)*3;
+  rg.rotation.y=Math.atan2(-Math.sin(a),Math.cos(a));
+  rg.children.forEach((seg,k)=>{seg.position.y=Math.sin(st*4-k*.8+i)*.15});
+ });
+ // treasure chest warm flicker
+ if(chest.children){const gl=chest.children.find(c=>c.isLight);if(gl)gl.intensity=1+.4*Math.sin(st*3)}
+ // depth-based atmosphere + color absorption
+ const depthT=cl((py-2)/32);
+ fogCol.copy(fogShallow).lerp(fogDeep,depthT);
+ fogCol.r*=(1-depthT*.35);fogCol.g*=(1-depthT*.08);
+ scene.fog.color.copy(fogCol);
+ scene.fog.density=(.0088+.0055*depthT)*(COARSE?1.3:1);
+ sun.intensity=(1.15-.42*depthT)*(quality>0?1:.85);
+ rim.intensity=.85-.28*depthT;
+ fill.intensity=.35-.12*depthT;
+ R.toneMappingExposure=1.05-.18*depthT;
+ // volume light shafts: position + pulse + LOD budget
+ beams.forEach((b,i)=>{
+  const on=i<beamBudget;
+  b.visible=on;
+  if(on){
+   b.position.set(px+(i-6.5)*7.5, 22+py*.1+(i%3)*2, pz-6-(i%5)*6);
+   b.material.opacity=(.022+.02*Math.sin(st*.4+i*1.3))*(1-depthT*.55)*(quality>0?1:.7);
+  }
+ });
+ // caustics scroll + second layer (muted green-blue)
+ ct.offset.set(st*.011+px/14,st*.008-pz/14);
+ caus.position.set(px,.035,pz);
+ caus2.position.set(px,.04,pz);
+ caus2.material.opacity=(.08+.03*Math.sin(st*.3))*(1-depthT*.5);
+ caus.material.opacity=.26*(1-depthT*.45);
+ // bubbles
+ const a=bg2.attributes.position.array;for(let i=0;i<NB;i++){a[i*3+1]+=dt*(.42+(i%7)*.16);a[i*3]+=Math.sin(st+i)*dt*.12;if(a[i*3+1]>30){a[i*3+1]=0;a[i*3]=(rnd()-.5)*80;a[i*3+2]=(rnd()-.5)*80}}bg2.attributes.position.needsUpdate=true;
+ // secondary plankton drift
+ plk2.position.set(px,0,pz);plk2.rotation.y+=dt*.018;
+ // floating debris
+ debris.forEach((d,i)=>{
+  d.y+=Math.sin(st*.4+d.ph)*dt*.08;d.x+=d.vx*dt;d.z+=d.vz*dt;
+  WD.position.set(px+d.x,d.y,pz+d.z);WD.rotation.set(st*d.sp*.3,st*d.sp,st*d.sp*.5);WD.scale.setScalar(d.s);WD.updateMatrix();debIM.setMatrixAt(i,WD.matrix);
+ });debIM.instanceMatrix.needsUpdate=true;
+ // bioluminescent wake when swimming
+ if(spd>1.2){
+  for(let k=0;k<2;k++){
+   const t=wIdx%WN;wp[t*3]=px+(rnd()-.5)*1.2-vx*dt*2;wp[t*3+1]=py+3.5+(rnd()-.5)*1.5;wp[t*3+2]=pz+(rnd()-.5)*1.2-vz*dt*2;wa[t]=1;wIdx++;
+  }
+ }
+ for(let i=0;i<WN;i++){if(wa[i]>0){wa[i]-=dt*.7;wp[i*3+1]+=dt*.3}else{wp[i*3+1]=-99}}
+ wg.attributes.position.needsUpdate=true;
+ wake.material.opacity=.15+.4*Math.min(1,spd/8);
+
+ // HUD
+ const hs=Math.round(Math.hypot(px,pz));
+ hud.textContent='Distance: '+hs+' m  ·  Depth: '+Math.round(py)+' m'+'  ·  '+nextSite();
+ // minimap
+ drawMinimap(px,pz,yw);
+ audio(playing?dt:0,E,spd);
+ // help fades after a few seconds of movement
+ helpT+=dt;if(spd>.8)helpT+=dt*2;
+ if(helpEl)helpEl.style.opacity=String(Math.max(0,.75-helpT/14));
+ // auto orbit when idle / during explode
+ if(!drag&&playing&&(spd<.3||E>0.15))az+=dt*(.08+.65*sm(E));
+ // cinematic camera — smooth lag + subtle breathing
+ const lag=1-Math.exp(-dt*4.8);
+ camAz+=(az-camAz)*lag;
+ camEl+=(el-camEl)*lag;
+ camZoom+=(zoom-camZoom)*lag;
+ camPx+=(px-camPx)*lag;
+ camPy+=(py-camPy)*lag;
+ camPz+=(pz-camPz)*lag;
+ const breath=.04*Math.sin(st*.35);
+ const asp=innerWidth/innerHeight,Rd=Math.max(16,11.5/asp)*camZoom*(1+.5*E)*(1+breath*.15);
+ const ee=camEl+.05*Math.sin(st*.18)+breath*.3;
+ const camY=5.0+(camPy-4.6)+bob*.8;
+ // slight lateral drift for living camera
+ const lat=.15*Math.sin(st*.11);
+ cam.position.set(camPx+Math.sin(camAz)*Math.cos(ee)*Rd+Math.cos(camAz)*lat, camY+Math.sin(ee)*Rd, camPz+Math.cos(camAz)*Math.cos(ee)*Rd-Math.sin(camAz)*lat);
+ cam.lookAt(camPx, camY-0.2, camPz);
+ // FOV: base + flare + subtle speed squeeze
+ cam.fov=38+flare*4-Math.min(2.5,spd*.12);cam.updateProjectionMatrix();
+ R.render(scene,cam);if(shot){shot=false;try{const a=document.createElement("a");a.download="clockwork-octopus.png";a.href=cv.toDataURL("image/png");a.click()}catch(e){}const f=document.getElementById("flash");f.style.transition="none";f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition="opacity .5s";f.style.opacity=0})}
+ document.body.classList.toggle('story',!manual&&(playing||t>.05));
+ let si=0;while(si<4&&t>=B[si+1])si++;if(si!==cur){cur=si;nameEl.textContent=(si+1)+'. '+S[si][0];descEl.textContent=S[si][1]}
+ bars.forEach((b,i)=>b.style.width=cl((t-B[i])/S[i][2])*100+'%');
+ // adaptive quality — LOD by FPS
+ const fps=dt>0?1/dt:60;fpsEma=fpsEma*.9+fps*.1;fpsCheck+=dt;
+ if(fpsCheck>1.2){
+  fpsCheck=0;
+  if(fpsEma<28&&quality>0){quality--;R.setPixelRatio(Math.min(devicePixelRatio,quality===0?1:1.25));beamBudget=quality===0?6:10;bub.visible=quality>0;plk2.visible=quality>0}
+  else if(fpsEma>50&&quality<2){quality++;R.setPixelRatio(Math.min(devicePixelRatio,quality===2?2:1.25));beamBudget=quality===2?14:10;bub.visible=true;plk2.visible=quality>0}
+ }
+ requestAnimationFrame(frame)}
+const Xl=mk(loose.length);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
