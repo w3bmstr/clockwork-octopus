@@ -67,6 +67,8 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
  #found{top:14%}h1{font-size:16px}#top{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}#tip{top:22%}
 }
 #panel{display:none}body.story #panel{display:block}
+#page-story ul{margin:0 0 6px;padding-left:18px}#page-story li{margin:0 0 8px;line-height:1.5}
+#page-story p.storyProgress{color:var(--gold);font-weight:600;letter-spacing:.04em}
 #menuPanel .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
 #menuPanel .ctl button{margin:0;padding:11px 8px;border-radius:12px;font:500 15px 'Cormorant Garamond',Georgia,serif;letter-spacing:.05em;background:rgba(232,191,106,.05);border:1px solid rgba(232,191,106,.35);color:var(--ink);cursor:pointer}
 #menuPanel .ctl button:hover{background:rgba(232,191,106,.14)}
@@ -161,6 +163,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
   <nav>
     <button data-page="controls" class="active">Controls</button>
     <button data-page="welcome">Welcome</button>
+    <button data-page="story">Story</button>
     <button data-page="map">Map</button>
     <button data-page="about">About</button>
     <button data-page="contact">Contact</button>
@@ -171,7 +174,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
       <p class="ctlLabel">Animation</p>
       <div class="ctl"><button id="pl">Play animation</button><button id="dis">Disassemble</button><button id="rea">Reassemble</button></div>
       <p class="ctlLabel">Camera and tools</p>
-      <div class="ctl"><button id="cm">Cam: Chase</button><button id="cw">Colors</button><button id="sn" aria-pressed="false">Sound</button><button id="ph">Photo</button></div>
+      <div class="ctl"><button id="cm">Cam: Chase</button><button id="cw">Colors</button><button id="sn" aria-pressed="false">Sound</button><button id="ph">Photo</button><button id="rst">Reset progress</button></div>
     </div>
     <div id="page-welcome" class="page">
       <h3>Welcome</h3>
@@ -184,7 +187,25 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
         <kbd>Mouse</kbd><span>Look</span>
         <kbd>H</kbd><span>Return home</span>
       </div>
-      <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p>
+      <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p><p>The great clock tower has stopped. Find every site to recover its lost gears, then return to the tower to set it running again.</p>
+    </div>
+    <div id="page-story" class="page">
+      <h3>The Story</h3>
+      <p>The great clock tower has stopped, and its gears are scattered across the sunken sites.</p>
+      <p id="storyProgress" class="storyProgress">Gears recovered: 0 of 13</p>
+      <p class="ctlLabel">How it works</p>
+      <ul>
+        <li>Each site you find shows “Gear 3 of 13 recovered” with the site’s name.</li>
+        <li>When you’ve found all 13, you’re told to return to the clock tower. The line under the title then points you toward it, with distance and direction.</li>
+        <li>Swim back to the tower and it runs again. The gears spin up, the clock face blazes, and you hear a rising chime if Sound is on.</li>
+        <li>Until then, the tower’s gears turn very slowly and its glow is dim, so you can see it is stopped. After the ending it runs at full speed.</li>
+      </ul>
+      <p class="ctlLabel">Progress and reward</p>
+      <ul>
+        <li>Your discoveries and the finished ending are saved in your browser, so they’re still there next time.</li>
+        <li>Finishing the story unlocks a new colorway, Midnight pearl, a steel-blue and pearl look. It joins the Colors button.</li>
+        <li>Use Reset progress in Controls to start over. It also clears the unlock.</li>
+      </ul>
     </div>
     <div id="page-map" class="page">
       <h3>Chart</h3>
@@ -782,9 +803,20 @@ function mantas(st){MN.forEach(m=>{const a=st*m.w+m.ph,P=m.pa,B=m.base;
  m.grp.rotation.y=m.w>0?-a:-a+PI;m.grp.rotation.z=Math.sin(st*.5+m.ph)*.12})}
 let shot=false,foundT=0;const foundEl=document.getElementById('found');
 document.getElementById('ph').onclick=()=>{try{setMenuOpen(false)}catch(e){}setTimeout(()=>{shot=true},450)};
-function chimeFound(){try{if(typeof on==='undefined'||!on||!ac)return;[523,659,784,1047].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.11;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.1,n+.04);g.gain.exponentialRampToValueAtTime(.0001,n+2);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.1)})}catch(e){}}
-function showFound(lm){const all=landmarks.every(l=>l.seen);foundEl.querySelector('small').textContent=all?'The deep is charted':'Site discovered';foundEl.querySelector('b').textContent=all?'Every site found':lm.name;foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),4200);chimeFound()}
-function nextSite(){let b=null,d=1e9;landmarks.forEach(l=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l}}});if(!b)return 'All sites found';const ang=Math.atan2(b.x-px,-(b.z-pz)),dirs=['N','NE','E','SE','S','SW','W','NW'];return 'Next site: '+Math.round(d)+' m '+dirs[Math.round(((ang+PI*2)%(PI*2))/(PI/4))%8]}
+function chimeFound(lm){try{if(typeof on==='undefined'||!on||!ac)return;if(lm&&siteSound(lm.id))return;[523,659,784,1047].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.11;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.1,n+.04);g.gain.exponentialRampToValueAtTime(.0001,n+2);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.1)})}catch(e){}}
+let storyDone=false,lastFoundAt=0,endingT=0;const SKEY='clockwork_octopus_story_v1';
+function saveStory(){try{localStorage.setItem(SKEY,JSON.stringify({found:landmarks.filter(l=>l.seen).map(l=>l.id),done:storyDone}))}catch(e){}}
+function unlockPal(){if(!PAL.some(p=>p.n==='Midnight pearl'))PAL.push({n:'Midnight pearl',b:0x9fb6d8,c:0x6f86b8,z:0x3f4f7a,w:0xe9eefc,pc:[0xb7c8e8,0x8fa6d0,0xd0dcf2,0x7388b8],a:0xb0c8ff,k:0x7a8cff,i:0xc0d0ff,core:0x9fb4ff})}
+function loadStory(){try{const d=JSON.parse(localStorage.getItem(SKEY)||'null');if(!d)return;landmarks.forEach(l=>{if(d.found.includes(l.id))l.seen=true});storyDone=!!d.done;if(storyDone)unlockPal()}catch(e){}}
+function showFound(lm){const n=landmarks.filter(l=>l.seen).length,tot=landmarks.length,all=n===tot;lastFoundAt=performance.now();
+ foundEl.querySelector('small').textContent=all?'All gears recovered':'Gear '+n+' of '+tot+' recovered';foundEl.querySelector('b').textContent=all?'Return to the clock tower':lm.name;
+ foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),4200);chimeFound(lm);saveStory()}
+function storyTick(px,pz){if(storyDone||!landmarks.every(l=>l.seen)||performance.now()-lastFoundAt<4800)return;const t=landmarks.find(l=>l.id==='tower');if(t&&Math.hypot(t.x-px,t.z-pz)<16)finishStory()}
+function finishStory(){storyDone=true;endingT=performance.now();unlockPal();saveStory();updateMapLegend();
+ foundEl.querySelector('small').textContent='The clock tower runs again';foundEl.querySelector('b').textContent='The deep is whole';foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),7500);
+ try{if(typeof on!=='undefined'&&on&&ac)[392,523,659,784,1047,1319].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.14;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.12,n+.05);g.gain.exponentialRampToValueAtTime(.0001,n+2.6);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.7)})}catch(e){}}
+document.getElementById('rst').onclick=()=>{try{localStorage.removeItem(SKEY)}catch(e){}location.reload()};
+function nextSite(){let b=null,d=1e9;landmarks.forEach(l=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l}}});if(!b){if(storyDone)return 'The clock tower runs again';const t=landmarks.find(l=>l.id==='tower'),dx=t.x-px,dz=t.z-pz,an=Math.atan2(dx,-dz),dr=['N','NE','E','SE','S','SW','W','NW'];return 'Return to the clock tower: '+Math.round(Math.hypot(dx,dz))+' m '+dr[Math.round(((an+PI*2)%(PI*2))/(PI/4))%8]}const ang=Math.atan2(b.x-px,-(b.z-pz)),dirs=['N','NE','E','SE','S','SW','W','NW'];return 'Next site: '+Math.round(d)+' m '+dirs[Math.round(((ang+PI*2)%(PI*2))/(PI/4))%8]}
 // === NEW POINTS OF INTEREST: clock tower, crystal garden, whale graveyard, lighthouse ===
 const POI={tg:[]};
 {const gs=(col,sz,x,y,z,op)=>{const sp=new T.Sprite(new T.SpriteMaterial({map:white,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op}));sp.scale.set(sz,sz,1);sp.position.set(x,y,z);scene.add(sp);return sp};
@@ -835,7 +867,7 @@ function details(st){
  PD.g.forEach((g,i)=>{dobj.position.set(g.x,g.vert?g.r*.55:.15,g.z);dobj.rotation.set(g.vert?0:-PI/2,g.vert?g.yaw:0,0);dq.setFromAxisAngle(dz,st*g.v);dobj.quaternion.multiply(dq);dobj.scale.setScalar(g.r);dobj.updateMatrix();PD.gm.setMatrixAt(i,dobj.matrix)});PD.gm.instanceMatrix.needsUpdate=true;
  [PD.m1,PD.m2].forEach(m=>{for(let i=0;i<m.n;i++){const p=m.P[i],a=p.a+st*p.v;m.a[i*3]=m.cx+Math.cos(a)*p.r;m.a[i*3+1]=p.y+Math.sin(st*.4+p.p)*1.2;m.a[i*3+2]=m.cz+Math.sin(a)*p.r}m.g.attributes.position.needsUpdate=true});
  PD.bu.forEach(u=>{const y=u.h+Math.sin(st*.8+u.p)*.4;u.b.position.y=y;u.c.position.y=y/2;u.c.scale.y=y})}
-function poi(st){details(st);POI.tg.forEach(o=>o.g.rotation.z=st*o.v);POI.lh.rotation.y=st*.6;POI.tface.material.opacity=.3+.12*Math.sin(st*.9);POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7);POI.rings.forEach(({m,i})=>{const p=(st*.14+i/6)%1,x=p*70;m.position.x=x;m.scale.setScalar(Math.max(.2,x/10*.97));m.material.opacity=.4*(1-p)*Math.min(1,p/.08)});
+function poi(st){details(st);const _pd=Math.min(.1,Math.max(0,st-(poi.l||st)));poi.l=st;const _bo=storyDone?Math.max(0,1-(performance.now()-endingT)/6000):0,sk=storyDone?1+_bo*3:.12;POI.tg.forEach(o=>{o.a=(o.a||0)+_pd*o.v*sk;o.g.rotation.z=o.a});POI.lh.rotation.y=st*.6;POI.tface.material.opacity=(.3+.12*Math.sin(st*.9))*(storyDone?1+_bo*1.4:.3);POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7);POI.rings.forEach(({m,i})=>{const p=(st*.14+i/6)%1,x=p*70;m.position.x=x;m.scale.setScalar(Math.max(.2,x/10*.97));m.material.opacity=.4*(1-p)*Math.min(1,p/.08)});
  {const th=POI.lh.rotation.y,bx=Math.cos(th),bz=-Math.sin(th),cx=cam.position.x-95,cz=cam.position.z-15,dd=Math.hypot(cx,cz)||1,fl=Math.pow(Math.abs((bx*cx+bz*cz)/dd),8);POI.flare.material.opacity=.15+.85*fl;POI.flare.scale.setScalar(40+60*fl)}}
 // UI + camera + 3D controls
 const nameEl=document.getElementById('name'),descEl=document.getElementById('desc'),tl=document.getElementById('tl'),pl=document.getElementById('pl'),bars=[],bgEl=document.getElementById('bg');
@@ -883,6 +915,7 @@ function updateMapLegend(){
   const seen=landmarks.filter(l=>l.seen).length;
   if(mapCountEl)mapCountEl.innerHTML='Discovered <b>'+seen+'</b> / '+landmarks.length;
   if(mapBarEl)mapBarEl.style.width=(seen/landmarks.length*100)+'%';
+  {const sp=document.getElementById('storyProgress');if(sp)sp.textContent='Gears recovered: '+seen+' of '+landmarks.length+(storyDone?' · The clock tower runs again':'')}
   mapLegendEl.innerHTML=landmarks.map(lm=>
     '<div class="'+(lm.seen?'visited':'')+'"><span class="dot" style="background:'+lm.c+';color:'+lm.c+'"></span>'+
     (lm.seen?lm.name:'???')+'<span class="seen">'+(lm.seen?'Found':'—')+'</span></div>'
@@ -894,7 +927,7 @@ function checkDiscoveries(px,pz){
   landmarks.forEach(lm=>{
     if(!lm.seen&&Math.hypot(lm.x-px,lm.z-pz)<lm.radius){lm.seen=true;changed=true;showFound(lm)}
   });
-  if(changed)updateMapLegend();
+  if(changed)updateMapLegend();storyTick(px,pz);
 }
 function drawMinimap(px,pz,yaw){
   checkDiscoveries(px,pz);
@@ -981,13 +1014,46 @@ function initAudio(){
   const ws=ac.createBufferSource();ws.buffer=wb;ws.loop=true;
   whooshF=ac.createBiquadFilter();whooshF.type='bandpass';whooshF.frequency.value=400;whooshF.Q.value=.8;
   whooshG=ac.createGain();whooshG.gain.value=0;
-  ws.connect(whooshF);whooshF.connect(whooshG);whooshG.connect(nf);ws.start();
+  ws.connect(whooshF);whooshF.connect(whooshG);whooshG.connect(nf);ws.start();initScape();
 }
 sb.onclick=()=>{initAudio();on=!on;if(ac.state==='suspended')ac.resume();mg.gain.setTargetAtTime(on?.55:0,ac.currentTime,.35);sb.textContent=on?'Sound on':'Sound';sb.setAttribute('aria-pressed',String(on))};
 function click(f,v,d){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g);g.connect(nf);o.start();o.stop(ac.currentTime+d)}
 function softTone(f,v,dur){if(!ac||!on)return;const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(v,ac.currentTime+.05);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);o.connect(g);g.connect(nf);o.start();o.stop(ac.currentTime+dur+.05)}
+// === SOUNDSCAPE: drifting pad, audio compass, whale song, a sound for every site ===
+let padO=[],padG,beaconO,beaconO2,beaconG,echoIn,whaleT=14;const PADN=[110,164.8,220,277.2],PENT=[220,247,277,330,370,440,494,554,660,740,880,988,1109];
+function initScape(){
+ padG=ac.createGain();padG.gain.value=.05;const pf=ac.createBiquadFilter();pf.type='lowpass';pf.frequency.value=700;padG.connect(pf);pf.connect(nf);
+ padO=PADN.map((f,i)=>{const o=ac.createOscillator();o.type=i%2?'triangle':'sine';o.frequency.value=f;o.detune.value=(i-1.5)*5;const g=ac.createGain();g.gain.value=.25;o.connect(g);g.connect(padG);o.start();return o});
+ beaconG=ac.createGain();beaconG.gain.value=0;beaconG.connect(nf);
+ beaconO=ac.createOscillator();beaconO.type='sine';beaconO.frequency.value=440;beaconO.connect(beaconG);beaconO.start();
+ beaconO2=ac.createOscillator();beaconO2.type='triangle';beaconO2.frequency.value=880;const b2=ac.createGain();b2.gain.value=.35;beaconO2.connect(b2);b2.connect(beaconG);beaconO2.start();
+ echoIn=ac.createGain();const dl=ac.createDelay(1.5);dl.delayTime.value=.55;const fb=ac.createGain();fb.gain.value=.45;echoIn.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(nf);echoIn.connect(nf)}
+function whaleSong(){if(!ac||!on||!echoIn)return;const n=ac.currentTime,f0=130+Math.random()*70,o=ac.createOscillator(),o2=ac.createOscillator(),g=ac.createGain(),g2=ac.createGain();o.type=o2.type='sine';
+ [o,o2].forEach((x,i)=>{const m=i?2:1;x.frequency.setValueAtTime(f0*m,n);x.frequency.linearRampToValueAtTime(f0*1.55*m,n+3);x.frequency.linearRampToValueAtTime(f0*.8*m,n+7.5)});
+ g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.08,n+1.6);g.gain.setValueAtTime(.08,n+4.5);g.gain.exponentialRampToValueAtTime(.0001,n+8);
+ g2.gain.value=.4;o.connect(g);o2.connect(g2);g2.connect(g);g.connect(echoIn);o.start(n);o2.start(n);o.stop(n+8.2);o2.stop(n+8.2)}
+function scape(){
+ if(!padO.length)return;const n=ac.currentTime,dM=cl((py-2)/30),dS=Math.min(.1,Math.max(0,st-(scape.l||st)));scape.l=st;
+ padO.forEach((o,i)=>o.frequency.setTargetAtTime(PADN[i]*(1-.28*dM),n,1.5));
+ padG.gain.setTargetAtTime(.05+.015*Math.sin(st*.12),n,1);
+ let b=null,d=1e9,bi=0;landmarks.forEach((l,i)=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l;bi=i}}});
+ if(!b&&!storyDone){b=landmarks.find(l=>l.id==='tower');if(b){bi=landmarks.indexOf(b);d=Math.hypot(b.x-px,b.z-pz)}}
+ if(b&&d<60){const k=Math.pow(1-d/60,2),tr=.55+.45*Math.sin(st*(1.2+k*7)),f=PENT[bi%PENT.length];beaconG.gain.setTargetAtTime(.07*k*tr,n,.08);beaconO.frequency.setTargetAtTime(f,n,.2);beaconO2.frequency.setTargetAtTime(f*2,n,.2)}
+ else beaconG.gain.setTargetAtTime(0,n,.3);
+ whaleT-=dS;if(whaleT<=0){whaleT=28+Math.random()*30;whaleSong()}}
+function siteSound(id){if(!ac||!on)return false;const n=ac.currentTime;
+ const tone=(f,t0,dur,v,type,glide)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,n+t0);if(glide)o.frequency.exponentialRampToValueAtTime(glide,n+t0+dur);g.gain.setValueAtTime(.0001,n+t0);g.gain.exponentialRampToValueAtTime(v,n+t0+.03);g.gain.exponentialRampToValueAtTime(.0001,n+t0+dur);o.connect(g);g.connect(mg);o.start(n+t0);o.stop(n+t0+dur+.1)};
+ if(id==='tower'){[98,196,293.7,392].forEach((f,k)=>tone(f,k*.02,4,.1-.015*k));return true}
+ if(id==='crystals'){[1568,2093,2637,3136].forEach((f,k)=>tone(f,k*.07,1.4,.05));return true}
+ if(id==='whale'){tone(146,0,4.5,.12,'sine',230);tone(292,0,4.5,.05,'sine',460);return true}
+ if(id==='lighthouse'){tone(330,0,2.2,.07,'triangle');tone(495,.05,2.2,.06,'triangle');tone(660,.1,2.2,.04,'triangle');return true}
+ if(id.includes('chest')){[1319,1568,1760,2093,2637].forEach((f,k)=>tone(f,k*.06,.5,.05,'triangle'));return true}
+ if(id.includes('cave')){tone(220,0,1.8,.1,'sine',150);tone(110,0,2,.08);return true}
+ if(id.includes('ruin')||id.includes('trench')){tone(174.6,0,3,.09,'sine',130);tone(261.6,.2,3,.06,'sine',196);return true}
+ if(id.includes('ship')||id.includes('wreck')){tone(130.8,0,2.6,.09,'triangle',98);tone(196,.12,2.6,.06,'triangle',147);tone(65.4,0,3,.09);return true}
+ return false}
 function audio(dt,E,spd){
-  if(!on||!ac)return;
+  if(!on||!ac)return;scape();
   // deeper muffling when deeper / more open filter during explode
   const depthM=cl((py-2)/30);
   nf.frequency.setTargetAtTime(500+400*(1-depthM)+1200*E,ac.currentTime,.25);
@@ -1048,7 +1114,7 @@ function inkUpdate(dt,boosting){
   I.p[i*3]+=I.v[i*3]*dt;I.p[i*3+1]+=I.v[i*3+1]*dt;I.p[i*3+2]+=I.v[i*3+2]*dt;I.v[i*3]*=.985;I.v[i*3+2]*=.985;
   inkTmp.copy(fogCol).lerp(inkCol,Math.min(1,l*1.4));I.c[i*3]=inkTmp.r;I.c[i*3+1]=inkTmp.g;I.c[i*3+2]=inkTmp.b}
  I.g.attributes.position.needsUpdate=true;I.g.attributes.color.needsUpdate=true}
-function frame(now){if(!window._dk){window._dk=1;scene.traverse(o=>{if(o.isPointLight||o.isSpotLight)o.decay=1})}
+function frame(now){if(!window._sl){window._sl=1;loadStory();updateMapLegend()}if(!window._dk){window._dk=1;scene.traverse(o=>{if(o.isPointLight||o.isSpotLight)o.decay=1})}
  const dt=Math.min(.05,(now-last)/1000);last=now;
  // world time always advances; story timeline only when playing
  st+=dt;
