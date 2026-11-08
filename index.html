@@ -39,6 +39,7 @@ h1::before,h1::after{content:'';flex:0 1 110px;height:1px;background:linear-grad
 #top,#panel,#help,#dp{z-index:7}
 #found{position:fixed;left:50%;top:22%;transform:translate(-50%,-10px);text-align:center;opacity:0;pointer-events:none;transition:opacity .6s,transform .6s;z-index:9;text-shadow:0 2px 24px #000}
 #found.show{opacity:1;transform:translate(-50%,0)}
+#found em{display:block;margin:12px auto 0;max-width:min(78vw,420px);font:italic 500 clamp(15px,2.3vw,19px)/1.4 'Cormorant Garamond',Georgia,serif;color:var(--ink);opacity:.9}
 #found small{display:block;font:500 11px system-ui,sans-serif;letter-spacing:.4em;color:var(--dim);text-transform:uppercase}
 #found b{display:block;margin-top:8px;font:600 clamp(24px,4vw,40px)/1.1 'Cinzel',Georgia,serif;letter-spacing:.12em;color:var(--gold)}
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20;transition:opacity .5s}
@@ -187,11 +188,16 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
       <h3>Welcome</h3>
       <p>You are the <strong>Clockwork Octopus</strong> — a brass machine awakening in a living ocean of wrecks, ruins, and light.</p>
       <div class="keys">
-        <kbd>WASD</kbd><span>Swim</span>
-        <kbd>Q</kbd><span>Rise</span>
-        <kbd>E</kbd><span>Dive</span>
+        <kbd>W S</kbd><span>Swim forward / back</span>
+        <kbd>A D</kbd><span>Turn (chase cam) or strafe</span>
+        <kbd>Q · Space</kbd><span>Rise</span>
+        <kbd>E · Ctrl</kbd><span>Dive</span>
         <kbd>⇧</kbd><span>Sprint</span>
-        <kbd>Mouse</kbd><span>Look</span>
+        <kbd>Drag</kbd><span>Look</span>
+        <kbd>Scroll</kbd><span>Zoom</span>
+        <kbd>V</kbd><span>Switch camera</span>
+        <kbd>C</kbd><span>Cycle colors</span>
+        <kbd>P</kbd><span>Photo</span>
         <kbd>H</kbd><span>Return home</span>
       </div>
       <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p><p>Big rocks, the ships, the caves, the ruins and the landmarks are solid: swim around them, or rise above them. You can even rest on top.</p><p>The great clock tower has stopped. Find every site to recover its lost gears, then return to the tower to set it running again.</p>
@@ -202,9 +208,9 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
       <p id="storyProgress" class="storyProgress">Gears recovered: 0 of 13</p>
       <p class="ctlLabel">How it works</p>
       <ul>
-        <li>Each site you find shows “Gear 3 of 13 recovered” with the site’s name.</li>
+        <li>Each site you find shows “Gear 3 of 13 recovered” with the site’s name and a line of its story.</li>
         <li>When you’ve found all 13, you’re told to return to the clock tower. The line under the title then points you toward it, with distance and direction.</li>
-        <li>Swim back to the tower and it runs again. The gears spin up, the clock face blazes, and you hear a rising chime if Sound is on.</li>
+        <li>Swim back to the tower and it runs again. The gears spin up, the clock face blazes, and you hear a rising chime if Sound is on. A beam of light rises from the tower and the camera pulls back to show it.</li>
         <li>Until then, the tower’s gears turn very slowly and its glow is dim, so you can see it is stopped. After the ending it runs at full speed.</li>
       </ul>
       <p class="ctlLabel">Progress and reward</p>
@@ -253,7 +259,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 <div id="joy" aria-label="Swim joystick"><div id="knob"></div></div>
 <div id="tb"><button id="bUp" aria-label="Rise">▲</button><button id="bDn" aria-label="Dive">▼</button><button id="bSp" aria-label="Boost">⚡</button></div>
 <div id="tip">Left stick: swim and steer<br>Drag the sea: look · Pinch: zoom<br>▲ rise · ▼ dive · ⚡ tap to boost on/off</div>
-<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · H home</div>
+<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · C colors · P photo · H home</div>
 <script>
 (function(){var old=/[?&]lib=128/.test(location.search);
  document.write('<script src="'+(old?'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js':'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')+'"><\/script>');})();
@@ -650,21 +656,38 @@ const caus2=new T.Mesh(new T.CircleGeometry(70,64),new T.MeshBasicMaterial({map:
 
 // chunk world — denser, larger radius
 const CS=18,RC=COARSE?5:6,NC=(2*RC+1)**2,WD=new T.Object3D(),hud=document.getElementById('hud');let lh=-1,wcx=1e9,wcz=1e9;
-const rockIM=new T.InstancedMesh(new T.DodecahedronGeometry(1),rk,NC*16),
+// === ROCKS: lumpy smooth-shaded boulders with a stone texture ===
+function rockGeo(sw,sh){const g=new T.SphereGeometry(1,sw,sh),p=g.attributes.position;
+ for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+  const n=Math.sin(x*3.1+1.3)*Math.cos(y*2.7+.4)*.2+Math.sin(y*5.3+z*4.1)*.1+Math.sin(z*7.7+x*6.1+2)*.06+Math.sin(x*11+y*9+z*8)*.025,r=1+n;
+  if(y<-.25)y=-.25+(y+.25)*.35;p.setXYZ(i,x*r,y*r,z*r)}
+ g.computeVertexNormals();
+ const nm=g.attributes.normal,mp=new Map();
+ for(let i=0;i<p.count;i++){const k=p.getX(i).toFixed(3)+','+p.getY(i).toFixed(3)+','+p.getZ(i).toFixed(3);let e=mp.get(k);if(!e){e=[0,0,0,[]];mp.set(k,e)}e[0]+=nm.getX(i);e[1]+=nm.getY(i);e[2]+=nm.getZ(i);e[3].push(i)}
+ mp.forEach(e=>{const l=Math.hypot(e[0],e[1],e[2])||1;e[3].forEach(i=>nm.setXYZ(i,e[0]/l,e[1]/l,e[2]/l))});return g}
+{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#44605d';x.fillRect(0,0,256,256);
+ for(let i=0;i<140;i++){x.fillStyle=rnd()<.5?'rgba(0,0,0,'+(.05+rnd()*.08)+')':'rgba(255,255,255,'+(.03+rnd()*.06)+')';x.beginPath();x.arc(rnd()*256,rnd()*256,6+rnd()*34,0,7);x.fill()}
+ for(let i=0;i<700;i++){x.fillStyle=rnd()<.5?'rgba(0,0,0,.18)':'rgba(255,255,255,.12)';x.fillRect(rnd()*256,rnd()*256,1+rnd()*2,1+rnd()*2)}
+ x.strokeStyle='rgba(0,0,0,.2)';x.lineWidth=2;for(let i=0;i<6;i++){x.beginPath();const y0=20+i*40+rnd()*10;for(let k=0;k<=256;k+=8)x[k?'lineTo':'moveTo'](k,y0+Math.sin(k/30+i)*5);x.stroke()}
+ const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(2,1);t.anisotropy=4;
+ rk.map=t;rk.color.setHex(0xffffff);rk.bumpMap=t;rk.bumpScale=Number(T.REVISION)>150?.7:2;rk.needsUpdate=true}
+const ROCKG=rockGeo(COARSE?8:11,COARSE?6:8);
+const rockIM=new T.InstancedMesh(ROCKG,rk,NC*16),
 kelpIM=new T.InstancedMesh(new T.CylinderGeometry(.035,.15,1,6).translate(0,.5,0),M(0x2a6a48,0,.7,0x0a2818),NC*32),
 kelp2IM=new T.InstancedMesh(new T.CylinderGeometry(.025,.09,1,5).translate(0,.5,0),M(0x1e5a3a,0,.75,0x082014),NC*22),
 gearIM=new T.InstancedMesh(gearGeo(18,1,.5),bronze,NC*2),
 spireIM=new T.InstancedMesh(new T.ConeGeometry(1,1,7).translate(0,.5,0),new T.MeshStandardMaterial({color:0x3a98a8,emissive:0x186878,emissiveIntensity:.7,roughness:.25,metalness:.25,transparent:true,opacity:.88}),NC*2);
 [rockIM,kelpIM,kelp2IM,gearIM,spireIM].forEach(m=>{m.frustumCulled=false;scene.add(m)});
+rockIM.instanceColor=new T.InstancedBufferAttribute(new Float32Array(NC*16*3),3);
 const KD=[],KD2=[],GD=[];
 function rebuild(cx0,cz0){let ri=0,si=0;xr();KD.length=0;KD2.length=0;GD.length=0;BR.length=0;
  for(let a=-RC;a<=RC;a++)for(let b=-RC;b<=RC;b++){const cx=cx0+a,cz=cz0+b;let s=(((cx*73856093)^(cz*19349663))>>>0)%2147483646+1;const r=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646};
-  for(let i=0;i<14;i++){const k=.28+r()*r()*3.5;WD.position.set((cx+r())*CS,k*.18,(cz+r())*CS);WD.rotation.set(r()*3,r()*3,r()*3);WD.scale.set(k,k*(.4+r()*.4),k);WD.updateMatrix();rockIM.setMatrixAt(ri++,WD.matrix);if(k>2.2)BR.push({x:WD.position.x,z:WD.position.z,r:k*.85,h:WD.position.y+WD.scale.y})}
+  for(let i=0;i<14;i++){const k=.28+r()*r()*3.5;WD.position.set((cx+r())*CS,k*.18,(cz+r())*CS);WD.rotation.set(r()*3,r()*3,r()*3);WD.scale.set(k,k*(.4+r()*.4),k);WD.updateMatrix();rockIM.setMatrixAt(ri,WD.matrix);cc2.setHSL(.5+((ri*37)%100)/1250,.1+((ri*53)%100)/500,.6+((ri*29)%100)/300);rockIM.setColorAt(ri++,cc2);if(k>2.2)BR.push({x:WD.position.x,z:WD.position.z,r:k*.85,h:WD.position.y+WD.scale.y})}
   for(let i=0;i<28;i++)KD.push({x:(cx+r())*CS,z:(cz+r())*CS,h:5+r()*14,ph:r()*6,w:.7+r()*.9});
   for(let i=0;i<18;i++)KD2.push({x:(cx+r())*CS,z:(cz+r())*CS,h:2.5+r()*6.5,ph:r()*6,w:.32+r()*.5});
   if(r()<.75)GD.push({x:(cx+r())*CS,z:(cz+r())*CS,k:1.2+r()*3.6,vert:r()<.45,yaw:r()*PI,v:(r()<.5?-1:1)*(.04+r()*.16)});
   if(r()<.6){const h=5+r()*15,w=.6+r()*1.8;WD.position.set((cx+r())*CS,0,(cz+r())*CS);WD.rotation.set((r()-.5)*.3,0,(r()-.5)*.3);WD.scale.set(w,h,w);WD.updateMatrix();spireIM.setMatrixAt(si++,WD.matrix)}ex(cx,cz,r)}
- rockIM.instanceMatrix.needsUpdate=true;spireIM.count=si;spireIM.instanceMatrix.needsUpdate=true;gearIM.count=GD.length;xe()}
+ rockIM.instanceMatrix.needsUpdate=true;rockIM.instanceColor.needsUpdate=true;spireIM.count=si;spireIM.instanceMatrix.needsUpdate=true;gearIM.count=GD.length;xe()}
 // seagrass keeps a clear corridor between the camera and the octopus, and a clearing around both
 function clearF(x,z){const ax=cam.position.x,az2=cam.position.z,abx=px-ax,abz=pz-az2,l2=abx*abx+abz*abz||1,t=Math.max(0,Math.min(1,((x-ax)*abx+(z-az2)*abz)/l2)),dx=x-(ax+abx*t),dz=z-(az2+abz*t);return Math.max(.16,Math.min(1,(Math.sqrt(dx*dx+dz*dz)-3)/9))}
 function world(st){
@@ -674,7 +697,7 @@ function world(st){
 const qa2=new Q(),qb2=new Q(),tp2=new V(),cc2=new T.Color();
 const coralIM=new T.InstancedMesh(new T.ConeGeometry(.3,1,6).translate(0,.5,0),new T.MeshStandardMaterial({roughness:.45,metalness:.15,emissive:0x181818}),NC*26),
 cogIM=new T.InstancedMesh(gearGeo(8,1,.13),copper,NC*18),
-lampIM=new T.InstancedMesh(new T.SphereGeometry(1,10,8),new T.MeshBasicMaterial({color:0xffffff}),NC*10),
+lampIM=new T.InstancedMesh(new T.SphereGeometry(1,16,12),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false}),NC*10),
 jellyIM=new T.InstancedMesh(new T.SphereGeometry(1,14,8,0,PI*2,0,PI/2),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}),NC*5),
 fishB=new T.InstancedMesh(new T.SphereGeometry(1,8,6),new T.MeshStandardMaterial({roughness:.4,metalness:.2,emissive:0x111111}),NC*20),
 fishT=new T.InstancedMesh(new T.ConeGeometry(.26,.46,3).rotateX(PI/2),new T.MeshStandardMaterial({roughness:.4,metalness:.15,emissive:0x0a0a0a}),NC*20),
@@ -703,7 +726,7 @@ function ex(cx,cz,r){
  for(let i=0;i<PN;i++){const k=.07+r()*r()*.3;WD.position.set((cx+r())*CS,k*.35,(cz+r())*CS);WD.rotation.set(r()*3,r()*3,r()*3);WD.scale.set(k*1.3,k*.7,k);WD.updateMatrix();pebIM.setMatrixAt(pbi,WD.matrix);cc2.setHSL(.45+r()*.1,.18,.14+r()*.2);pebIM.setColorAt(pbi++,cc2)}
  if(r()<.7){const bx=(cx+r())*CS,bz=(cz+r())*CS,hue=.05+r()*.55;for(let i=0;i<22&&ci<NC*26;i++){const a=r()*PI*2,d=r()*4,h=.6+r()*3;WD.position.set(bx+Math.cos(a)*d,0,bz+Math.sin(a)*d);WD.rotation.set((r()-.5)*.65,0,(r()-.5)*.65);WD.scale.set(.45+r()*1.1,h,.45+r()*1.1);WD.updateMatrix();coralIM.setMatrixAt(ci,WD.matrix);cc2.setHSL((hue+r()*.12)%1,.45,.32+r()*.12);coralIM.setColorAt(ci++,cc2)}}
  if(r()<.85)for(let i=0;i<6;i++){const k=.22+r()*.85;WD.position.set((cx+r())*CS,.055,(cz+r())*CS);WD.rotation.set(-PI/2,0,r()*6);WD.scale.setScalar(k);WD.updateMatrix();cogIM.setMatrixAt(gi2++,WD.matrix)}
- if(r()<.65){for(let i=0,n=1+(r()*5|0);i<n&&li<LN;i++){const x=(cx+r())*CS,z=(cz+r())*CS,h=.9+r()*2.6,k=.24+r()*.26;WD.position.set(x,h,z);WD.rotation.set(0,0,0);WD.scale.setScalar(k);WD.updateMatrix();lampIM.setMatrixAt(li,WD.matrix);cc2.setHSL(r()<.4?.45:.15,.55,.4+r()*.1);lampIM.setColorAt(li,cc2);lpA[li*3]=x;lpA[li*3+1]=h;lpA[li*3+2]=z;lcA[li*3]=cc2.r;lcA[li*3+1]=cc2.g;lcA[li*3+2]=cc2.b;li++}}
+ if(r()<.65){for(let i=0,n=1+(r()*5|0);i<n&&li<LN;i++){const x=(cx+r())*CS,z=(cz+r())*CS,h=.9+r()*2.6,k=.24+r()*.26;WD.position.set(x,h,z);WD.rotation.set(0,0,0);WD.scale.setScalar(k);WD.updateMatrix();lampIM.setMatrixAt(li,WD.matrix);cc2.setHSL(r()<.5?.47:.56,.8,.55+r()*.1);lampIM.setColorAt(li,cc2);lpA[li*3]=x;lpA[li*3+1]=h;lpA[li*3+2]=z;lcA[li*3]=cc2.r;lcA[li*3+1]=cc2.g;lcA[li*3+2]=cc2.b;KD.push({x,z,h:h-k*.8,ph:li*1.7,w:.5});li++}}
  if(r()<.7){JL.push({x:(cx+r())*CS,z:(cz+r())*CS,y:3+r()*15,s:.6+r()*1.9,ph:r()*6});cc2.setHSL(.45+r()*.25,.4,.4);jellyIM.setColorAt(JL.length-1,cc2)}
  if(r()<.6)FS.push({x:(cx+.5)*CS,z:(cz+.5)*CS,y:1.8+r()*13,R:2.8+r()*9,w:(.22+r()*.55)*(r()<.5?-1:1),ph:r()*6,n:10+((r()*9)|0)});
  if(r()<.45)VT.push({x:(cx+r())*CS,z:(cz+r())*CS,ph:r()});
@@ -724,6 +747,7 @@ function ripples(dt){rpT-=dt;const low=py<8&&Math.hypot(vx,vz)>2;
  if(low&&rpT<=0){const r=RP.find(o=>o.l<=0);if(r){r.l=1;r.m.position.x=px;r.m.position.z=pz;rpT=.45}}
  RP.forEach(o=>{if(o.l<=0){o.m.visible=false;return}o.l-=dt*.7;o.m.visible=true;const k=1+(1-o.l)*7;o.m.scale.set(k,1,k);o.m.material.opacity=.35*o.l*(1-cl((py-2)/32))})}
 function ext(st){glints(st);const _dts=Math.min(.1,Math.max(0,st-(ext.ls||st)));ext.ls=st;ripples(_dts);
+ {for(let i=0;i<li;i++){const k=.78+.22*Math.sin(st*1.6+i*1.7);lampIM.setColorAt(i,jcC.setRGB(lcA[i*3]*k,lcA[i*3+1]*k,lcA[i*3+2]*k))}if(lampIM.instanceColor)lampIM.instanceColor.needsUpdate=true}
  let k=0;FS.forEach((f,fi)=>{if(f.a===undefined){f.a=st*f.w;f.sc=0}const near=(Math.hypot(f.x-px,f.z-pz)<f.R+18&&Math.hypot(vx,vz)>5)?1:0;f.sc+=(near-f.sc)*Math.min(1,_dts*2.2);f.a+=_dts*f.w*(1+f.sc*2.4);const n=f.n||10;for(let i=0;i<n;i++){const a=f.a+f.ph+i*.55+Math.sin(st*.6+i)*.2,rr=(f.R+Math.sin(i*2.1+st*.5)*1.4)*(1+f.sc*.9),x=f.x+Math.cos(a)*rr,z=f.z+Math.sin(a)*rr,y=f.y+Math.sin(a*2+i)*.95+f.sc*Math.sin(i*1.7+st)*1.2;
   qa2.setFromAxisAngle(Y,Math.atan2(-Math.sin(a)*f.w,Math.cos(a)*f.w));WD.position.set(x,y,z);WD.quaternion.copy(qa2);WD.scale.set(.16,.22,.6);WD.updateMatrix();fishB.setMatrixAt(k,WD.matrix);
   // colorful tropical fish
@@ -817,12 +841,14 @@ let storyDone=false,lastFoundAt=0,endingT=0;const SKEY='clockwork_octopus_story_
 function saveStory(){try{localStorage.setItem(SKEY,JSON.stringify({found:landmarks.filter(l=>l.seen).map(l=>l.id),done:storyDone}))}catch(e){}}
 function unlockPal(){if(!PAL.some(p=>p.n==='Midnight pearl'))PAL.push({n:'Midnight pearl',b:0x9fb6d8,c:0x6f86b8,z:0x3f4f7a,w:0xe9eefc,pc:[0xb7c8e8,0x8fa6d0,0xd0dcf2,0x7388b8],a:0xb0c8ff,k:0x7a8cff,i:0xc0d0ff,core:0x9fb4ff})}
 function loadStory(){try{const d=JSON.parse(localStorage.getItem(SKEY)||'null');if(!d)return;landmarks.forEach(l=>{if(d.found.includes(l.id))l.seen=true});storyDone=!!d.done;if(storyDone)unlockPal()}catch(e){}}
+const LORE={ship:"The Meridian sank carrying the tower’s spare gears. Her hold is split open.",chest:"A captain’s chest, locked by salt. Inside, one gear, still warm to the touch.",ruins:"The builders who taught brass to remember. They hid their gears in the pillars.",trench:"A gear fell here and never stopped falling, humming as it went. You caught up.",wreck2:"Smaller, older, quieter. Someone tucked a gear beneath the floorboards.",cave1:"A gear wedged in the dark, ticking softly against the rock.",cave2:"Something nested here and kept the gear polished.",cave3:"The tide delivers lost things to this mouth. The cave keeps what it’s given.",cave4:"Deep inside, one gear was still turning, very slowly.",tower:"The great clock, stopped. Its empty hubs are waiting.",crystals:"The crystals grew around a gear and learned to sing.",whale:"The last whale carried a gear in its chest and sank here to rest.",lighthouse:"Its lamp sweeps the dark to guide lost gears home."};
+function setLore(t){let e=foundEl.querySelector('em');if(!e){e=document.createElement('em');foundEl.appendChild(e)}e.textContent=t||''}
 function showFound(lm){const n=landmarks.filter(l=>l.seen).length,tot=landmarks.length,all=n===tot;lastFoundAt=performance.now();
  foundEl.querySelector('small').textContent=all?'All gears recovered':'Gear '+n+' of '+tot+' recovered';foundEl.querySelector('b').textContent=all?'Return to the clock tower':lm.name;
- foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),4200);chimeFound(lm);saveStory()}
+ foundEl.classList.add('show');clearTimeout(foundT);setLore(LORE[lm.id]);foundT=setTimeout(()=>foundEl.classList.remove('show'),6200);chimeFound(lm);saveStory()}
 function storyTick(px,pz){if(storyDone||!landmarks.every(l=>l.seen)||performance.now()-lastFoundAt<4800)return;const t=landmarks.find(l=>l.id==='tower');if(t&&Math.hypot(t.x-px,t.z-pz)<16)finishStory()}
 function finishStory(){storyDone=true;endingT=performance.now();unlockPal();saveStory();updateMapLegend();
- foundEl.querySelector('small').textContent='The clock tower runs again';foundEl.querySelector('b').textContent='The deep is whole';foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),7500);
+ foundEl.querySelector('small').textContent='The clock tower runs again';foundEl.querySelector('b').textContent='The deep is whole';setLore('Every gear turns again. The deep remembers the hour.');foundEl.classList.add('show');clearTimeout(foundT);foundT=setTimeout(()=>foundEl.classList.remove('show'),7500);
  try{if(typeof on!=='undefined'&&on&&ac)[392,523,659,784,1047,1319].forEach((f,k)=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+k*.14;o.frequency.value=f;g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.12,n+.05);g.gain.exponentialRampToValueAtTime(.0001,n+2.6);o.connect(g);g.connect(mg);o.start(n);o.stop(n+2.7)})}catch(e){}}
 document.getElementById('rst').onclick=()=>{try{localStorage.removeItem(SKEY)}catch(e){}location.reload()};
 function nextSite(){let b=null,d=1e9;landmarks.forEach(l=>{if(!l.seen){const q=Math.hypot(l.x-px,l.z-pz);if(q<d){d=q;b=l}}});if(!b){if(storyDone)return 'The clock tower runs again';const t=landmarks.find(l=>l.id==='tower'),dx=t.x-px,dz=t.z-pz,an=Math.atan2(dx,-dz),dr=['N','NE','E','SE','S','SW','W','NW'];return 'Return to the clock tower: '+Math.round(Math.hypot(dx,dz))+' m '+dr[Math.round(((an+PI*2)%(PI*2))/(PI/4))%8]}const ang=Math.atan2(b.x-px,-(b.z-pz)),dirs=['N','NE','E','SE','S','SW','W','NW'];return 'Next site: '+Math.round(d)+' m '+dirs[Math.round(((ang+PI*2)%(PI*2))/(PI/4))%8]}
@@ -865,7 +891,7 @@ const PD={};
  for(let i=0;i<44;i++){const a=rnd()*PI*2,d=10+rnd()*9,h=.8+rnd()*3.2,w=.25+rnd()*.5;o.position.set(62+Math.cos(a)*d,0,52+Math.sin(a)*d);o.rotation.set((rnd()-.5)*.7,rnd()*3,(rnd()-.5)*.7);o.scale.set(w,h,w);o.updateMatrix();PD.sh.setMatrixAt(i,o.matrix)}PD.sh.frustumCulled=false;scene.add(PD.sh);
  PD.bn=new T.InstancedMesh(new T.CylinderGeometry(.14,.2,1,6),new T.MeshStandardMaterial({color:0xe6dcc4,roughness:.85,emissive:0x1a1710}),30);
  for(let i=0;i<30;i++){const a=rnd()*PI*2,d=8+rnd()*16,L=.8+rnd()*2.6;o.position.set(-62+Math.cos(a)*d,.15,64+Math.sin(a)*d);o.rotation.set(PI/2+(rnd()-.5)*.4,rnd()*PI,(rnd()-.5)*.4);o.scale.set(1,L,1);o.updateMatrix();PD.bn.setMatrixAt(i,o.matrix)}PD.bn.frustumCulled=false;scene.add(PD.bn);
- PD.rk=new T.InstancedMesh(new T.DodecahedronGeometry(1),rk,14);
+ PD.rk=new T.InstancedMesh(ROCKG,rk,14);
  for(let i=0;i<14;i++){const a=i/14*PI*2+rnd()*.3,d=4+rnd()*3,k=.9+rnd()*1.8;o.position.set(95+Math.cos(a)*d,k*.25,15+Math.sin(a)*d);o.rotation.set(rnd()*3,rnd()*3,rnd()*3);o.scale.set(k,k*.65,k);o.updateMatrix();PD.rk.setMatrixAt(i,o.matrix)}PD.rk.frustumCulled=false;scene.add(PD.rk)}
 function motes(cx,cz,col,n){const a=new Float32Array(n*3),P=Array.from({length:n},()=>({a:rnd()*PI*2,r:2+rnd()*14,y:2+rnd()*12,v:(.05+rnd()*.12)*(rnd()<.5?-1:1),p:rnd()*6})),g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(a,3));
  const pt=new T.Points(g,new T.PointsMaterial({map:white,size:.8,color:col,transparent:true,opacity:.8,depthWrite:false,blending:T.AdditiveBlending}));pt.frustumCulled=false;scene.add(pt);return{a,P,g,cx,cz,n}}
@@ -944,7 +970,12 @@ function details(st){
  PD.g.forEach((g,i)=>{dobj.position.set(g.x,g.vert?g.r*.55:.15,g.z);dobj.rotation.set(g.vert?0:-PI/2,g.vert?g.yaw:0,0);dq.setFromAxisAngle(dz,st*g.v);dobj.quaternion.multiply(dq);dobj.scale.setScalar(g.r);dobj.updateMatrix();PD.gm.setMatrixAt(i,dobj.matrix)});PD.gm.instanceMatrix.needsUpdate=true;
  [PD.m1,PD.m2].forEach(m=>{for(let i=0;i<m.n;i++){const p=m.P[i],a=p.a+st*p.v;m.a[i*3]=m.cx+Math.cos(a)*p.r;m.a[i*3+1]=p.y+Math.sin(st*.4+p.p)*1.2;m.a[i*3+2]=m.cz+Math.sin(a)*p.r}m.g.attributes.position.needsUpdate=true});
  PD.bu.forEach(u=>{const y=u.h+Math.sin(st*.8+u.p)*.4;u.b.position.y=y;u.c.position.y=y/2;u.c.scale.y=y})}
-function poi(st){details(st);const _pd=Math.min(.1,Math.max(0,st-(poi.l||st)));poi.l=st;const _bo=storyDone?Math.max(0,1-(performance.now()-endingT)/6000):0,sk=storyDone?1+_bo*3:.12;POI.tg.forEach(o=>{o.a=(o.a||0)+_pd*o.v*sk;o.g.rotation.z=o.a});POI.lh.rotation.y=st*.6;POI.tface.material.opacity=(.3+.12*Math.sin(st*.9))*(storyDone?1+_bo*1.4:.3);POI.runes.forEach((m,i)=>{m.material.opacity=storyDone?.55+.35*Math.sin(st*2.2-i*1.1)+_bo*.3:.14+.05*Math.sin(st*.8+i)});POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7);POI.rings.forEach(({m,i})=>{const p=(st*.14+i/6)%1,x=p*70;m.position.x=x;m.scale.setScalar(Math.max(.2,x/10*.97));m.material.opacity=.4*(1-p)*Math.min(1,p/.08)});
+function poi(st){details(st);const _pd=Math.min(.1,Math.max(0,st-(poi.l||st)));poi.l=st;const _bo=storyDone?Math.max(0,1-(performance.now()-endingT)/6000):0,sk=storyDone?1+_bo*3:.12;if(!POI.beam){const bm2=()=>new T.MeshBasicMaterial({color:0x8ff4ff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false});
+  POI.beam=new T.Mesh(new T.CylinderGeometry(.8,2.6,120,16,1,true).translate(0,60,0),bm2());POI.beam.position.set(-80,28,-70);POI.beam.visible=false;scene.add(POI.beam);
+  POI.shock=new T.Mesh(new T.RingGeometry(.92,1,64).rotateX(-PI/2),bm2());POI.shock.position.set(-80,3,-70);POI.shock.visible=false;scene.add(POI.shock)}
+ {const now=performance.now(),eT=storyDone?(endingT>0?Math.min(1,(now-endingT)/2500):1):0;POI.beam.visible=eT>0;POI.beam.material.opacity=eT*(.3+.08*Math.sin(st*1.3));
+  const sp=storyDone&&endingT>0?(now-endingT)/5000:2;POI.shock.visible=sp>=0&&sp<1;if(POI.shock.visible){POI.shock.scale.setScalar(1+sp*90);POI.shock.material.opacity=.6*(1-sp)}}
+ POI.tg.forEach(o=>{o.a=(o.a||0)+_pd*o.v*sk;o.g.rotation.z=o.a});POI.lh.rotation.y=st*.6;POI.tface.material.opacity=(.3+.12*Math.sin(st*.9))*(storyDone?1+_bo*1.4:.3);POI.runes.forEach((m,i)=>{m.material.opacity=storyDone?.55+.35*Math.sin(st*2.2-i*1.1)+_bo*.3:.14+.05*Math.sin(st*.8+i)});POI.cg.material.opacity=.3+.1*Math.sin(st*1.7);if(POI.cl)POI.cl.intensity=2.2+.6*Math.sin(st*1.7);POI.rings.forEach(({m,i})=>{const p=(st*.14+i/6)%1,x=p*70;m.position.x=x;m.scale.setScalar(Math.max(.2,x/10*.97));m.material.opacity=.4*(1-p)*Math.min(1,p/.08)});
  {const th=POI.lh.rotation.y,bx=Math.cos(th),bz=-Math.sin(th),cx=cam.position.x-95,cz=cam.position.z-15,dd=Math.hypot(cx,cz)||1,fl=Math.pow(Math.abs((bx*cx+bz*cz)/dd),8);POI.flare.material.opacity=.15+.85*fl;POI.flare.scale.setScalar(40+60*fl)}}
 // UI + camera + 3D controls
 const nameEl=document.getElementById('name'),descEl=document.getElementById('desc'),tl=document.getElementById('tl'),pl=document.getElementById('pl'),bars=[],bgEl=document.getElementById('bg');
@@ -1492,8 +1523,9 @@ if(!window._sl){window._sl=1;loadStory();updateMapLegend();initQuality()}if(!win
  camPz+=(pz-camPz)*lag;
  const iK=introK();if(iK>0)camAz=az+iK*1.3;
  const breath=.04*Math.sin(st*.35);
- const asp=innerWidth/innerHeight,Rd=Math.max(16,11.5/asp)*camZoom*(1+.5*E)*(1+breath*.15)*(1+iK*1.1);
- const ee=camEl+.05*Math.sin(st*.18)+breath*.3+iK*.55;
+ const endE=(storyDone&&endingT>0)?(performance.now()-endingT)/1000:99,endK=sm(endE/1.8)*(1-sm((endE-5.5)/3));
+ const asp=innerWidth/innerHeight,Rd=Math.max(16,11.5/asp)*camZoom*(1+.5*E)*(1+breath*.15)*(1+iK*1.1)*(1+endK*.9);
+ const ee=camEl+.05*Math.sin(st*.18)+breath*.3+iK*.55+endK*.3;
  const camY=5.0+(camPy-4.6)+bob*.8;
  // slight lateral drift for living camera
  const lat=.15*Math.sin(st*.11);
