@@ -74,6 +74,9 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 #loader h1{margin:0;font-size:clamp(22px,5vw,40px);letter-spacing:.18em}
 #loader p{margin:0;font:600 12px system-ui,sans-serif;color:var(--dim);letter-spacing:.35em;text-transform:uppercase}
 @keyframes lgspin{to{transform:rotate(360deg)}}
+#menuPanel .pf{outline:2px solid var(--gold);outline-offset:2px;background:rgba(232,191,106,.2)!important;color:var(--gold)!important}
+#descend{display:none;margin-top:6px;padding:12px 44px;border-radius:30px;background:rgba(232,191,106,.12);border:1px solid var(--gold);color:var(--gold);font:600 20px 'Cinzel',Georgia,serif;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;animation:ldp 1.8s ease-in-out infinite}#descend.rdy{display:block}#ldHint{display:none;font-size:11px!important;opacity:.8}#descend.rdy~#ldHint{display:block}#descend:hover,#descend:focus-visible{background:rgba(232,191,106,.3);outline:none}@keyframes ldp{50%{box-shadow:0 0 26px rgba(232,191,106,.45)}}
+#padToast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 86px);transform:translateX(-50%);padding:6px 16px;border-radius:16px;background:rgba(2,10,14,.7);border:1px solid rgba(232,191,106,.45);color:var(--ink);font:500 15px "Cormorant Garamond",Georgia,serif;letter-spacing:.06em;opacity:0;pointer-events:none;transition:opacity .5s;z-index:30}
 #page-story ul{margin:0 0 6px;padding-left:18px}#page-story li{margin:0 0 8px;line-height:1.5}
 #page-story p.storyProgress{color:var(--gold);font-weight:600;letter-spacing:.04em}
 #menuPanel .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
@@ -154,7 +157,8 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 </head>
 <body>
 <div id="bg"></div>
-<div id="loader"><div class="lg">⚙</div><h1>Clockwork Octopus</h1><p>Diving in</p></div>
+<div id="loader"><div class="lg">⚙</div><h1>Clockwork Octopus</h1><p>Diving in</p><button id="descend" type="button">Descend</button><p id="ldHint">Click Descend · or press Enter · or A on a controller</p></div>
+<div id="padToast"></div>
 <div id="vignette"></div>
 <div id="grain"></div>
 <div id="top"><h1>Clockwork Octopus</h1><div id="cnt"></div><div id="hud"></div></div>
@@ -198,6 +202,8 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
         <kbd>V</kbd><span>Switch camera</span>
         <kbd>C</kbd><span>Cycle colors</span>
         <kbd>P</kbd><span>Photo</span>
+        <kbd>F</kbd><span>Fullscreen</span>
+        <kbd>🎮</kbd><span>L-stick move · R-stick look · A rise · B/LT dive · RT/RB boost · X camera · Y colors · R3 photo · L3 home · Start menu (D-pad/stick to move, A select, B close, LB/RB tabs) · Back play/pause</span>
         <kbd>H</kbd><span>Return home</span>
       </div>
       <p>The octopus starts at rest. Open <strong>Controls</strong> to play the animation or take it apart, and <strong>Map</strong> to find your way.</p><p>Big rocks, the ships, the caves, the ruins and the landmarks are solid: swim around them, or rise above them. You can even rest on top.</p><p>The great clock tower has stopped. Find every site to recover its lost gears, then return to the tower to set it running again.</p>
@@ -259,7 +265,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 <div id="joy" aria-label="Swim joystick"><div id="knob"></div></div>
 <div id="tb"><button id="bUp" aria-label="Rise">▲</button><button id="bDn" aria-label="Dive">▼</button><button id="bSp" aria-label="Boost">⚡</button></div>
 <div id="tip">Left stick: swim and steer<br>Drag the sea: look · Pinch: zoom<br>▲ rise · ▼ dive · ⚡ tap to boost on/off</div>
-<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · C colors · P photo · H home</div>
+<div id="help">W/S swim · A/D turn · Q/E or Space/Ctrl up-down · Shift sprint · Drag to look · Scroll zoom · V camera · C colors · P photo · H home · F fullscreen · Gamepad: L-stick move, R-stick look, A rise, B dive, RT boost</div>
 <script>
 (function(){var old=/[?&]lib=128/.test(location.search);
  document.write('<script src="'+(old?'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js':'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')+'"><\/script>');})();
@@ -915,9 +921,29 @@ function solidAt(x,y,z){for(let li=0;li<2;li++){const L=li?BR:COLS;for(let i=0;i
 function camClipApply(tx,ty,tz,dt){const cx=cam.position.x,cy=cam.position.y,cz=cam.position.z;let f=1;
  for(let k=1;k<=14;k++){const u=k/14;if(solidAt(tx+(cx-tx)*u,ty+(cy-ty)*u,tz+(cz-tz)*u)){f=Math.max(.14,(k-1)/14);break}}
  camF+=(f-camF)*Math.min(1,dt*(f<camF?14:2.5));cam.position.set(tx+(cx-tx)*camF,ty+(cy-ty)*camF,tz+(cz-tz)*camF)}
-const LOAD_T0=performance.now(),LOAD_MS=2000,REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches,loaderEl=document.getElementById('loader');let loaderGone=false,introSkipAt=null;
+let LOAD_T0=performance.now(),entered=false,enterT=0;const LOAD_MS=2000,REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches,loaderEl=document.getElementById('loader');let loaderGone=false,introSkipAt=null;
 function introK(){const now=performance.now();let k=1-sm((now-LOAD_T0-LOAD_MS)/6500);if(REDUCE)k=0;if(introSkipAt!==null)k=Math.min(k,1-sm((now-introSkipAt)/700));return Math.max(0,Math.min(1,k))}
-['keydown','pointerdown'].forEach(n=>addEventListener(n,()=>{if(introSkipAt===null&&performance.now()-LOAD_T0>LOAD_MS)introSkipAt=performance.now()},{passive:true}));
+const skipIntro=()=>{if(entered&&introSkipAt===null&&performance.now()-enterT>400)introSkipAt=performance.now()};
+['keydown','pointerdown'].forEach(n=>addEventListener(n,skipIntro,{passive:true}));
+// —— fullscreen: browsers only allow it from a real click/tap/key, so the loader waits for one ——
+const FSel=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function goFull(){const d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;if(f&&!FSel()){try{const r=f.call(d,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}}}
+function toggleFull(){if(FSel()){try{const r=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(r&&r.catch)r.catch(()=>{})}catch(e){}}else goFull()}
+let fsTried=false;
+function enterGame(){if(entered)return;entered=true;enterT=performance.now();LOAD_T0=enterT-LOAD_MS}
+const descBtn=document.getElementById('descend');
+setTimeout(()=>{if(descBtn){descBtn.classList.add('rdy');try{descBtn.focus({preventScroll:true})}catch(e){}}},LOAD_MS);
+// Descend is the ONLY way in: nothing else (keys, stick, pointer) starts or steers the game until it's activated.
+// Fullscreen is requested straight from the click / key handler, like a game's Start button.
+function begin(e){if(entered||performance.now()-LOAD_T0<LOAD_MS)return;if(e&&e.preventDefault)e.preventDefault();fsTried=!!(e&&e.isTrusted);goFull();enterGame()}
+if(descBtn)descBtn.onclick=begin;
+addEventListener('keydown',e=>{
+ if(entered){if(!fsTried&&e.code!=='Escape'){fsTried=true;goFull()}return}
+ e.stopImmediatePropagation(); // swallow movement/other keys while the start screen is up
+ if(e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Space'){if(!e.repeat)begin(e)}else if(e.code==='Tab'){} 
+},{capture:true});
+addEventListener('pointerdown',()=>{if(entered&&!fsTried){fsTried=true;goFull()}},{capture:true});
+addEventListener('keydown',e=>{if(e.code==='KeyF'&&!e.repeat){fsTried=true;toggleFull()}});
 let qMode='auto';
 function setQuality(m){qMode=m;if(m!=='auto')quality={low:0,medium:1,high:2,ultra:2}[m];
  const pr=m==='ultra'?2.5:(quality===2?2:(quality===1?(COARSE?1.5:1.25):1));R.setPixelRatio(Math.min(devicePixelRatio,pr));
@@ -1191,6 +1217,61 @@ function audio(dt,E,spd){
 addEventListener('keydown',e=>{if(e.code==='Space'&&e.target===document.body){e.preventDefault()}}); // Space now used for up
 const camBtn=document.getElementById("cm");const toggleCam=()=>{chase=!chase;camBtn.textContent="Cam: "+(chase?"Chase":"Free")};camBtn.onclick=()=>{toggleCam();try{setMenuOpen(false)}catch(e){}};let startAlign=0,wasMove=false;
 const joy={x:0,y:0};let touchUp=0,touchDn=0,touchSprint=false;
+// —— controller-driven menu: d-pad / left stick move the highlight, A selects, LB/RB switch tabs, B/Start close, right stick scrolls ——
+let mi=0,mWas=false,mDir=0,mTimer=0,mPrev=[];
+const mItems=()=>[...menuPanel.querySelectorAll('nav button'),...menuPanel.querySelectorAll('.page.active button, .page.active a[href]')].filter(e=>e.offsetParent!==null);
+function mMark(){const L=mItems();menuPanel.querySelectorAll('.pf').forEach(e=>e.classList.remove('pf'));if(!L.length)return;mi=Math.max(0,Math.min(L.length-1,mi));const e=L[mi];e.classList.add('pf');try{e.scrollIntoView({block:'nearest'})}catch(x){}}
+function padMenu(open,dt,g,now,lx,ly,ry){
+ if(!open){if(mWas){mWas=false;menuPanel.querySelectorAll('.pf').forEach(e=>e.classList.remove('pf'))}mPrev=now;return}
+ const edge=i=>now[i]&&!mPrev[i];
+ if(!mWas){mWas=true;mi=Math.max(0,[...menuPanel.querySelectorAll('nav button')].findIndex(b=>b.classList.contains('active')));mDir=0;mMark()}
+ // direction with auto-repeat
+ let d=0;if(now[12]||now[14]||ly<-.6||lx<-.6)d=-1;else if(now[13]||now[15]||ly>.6||lx>.6)d=1;
+ if(d&&d!==mDir){mi+=d;mMark();mTimer=.4}else if(d&&(mTimer-=dt)<=0){mi+=d;mMark();mTimer=.14}
+ mDir=d;
+ const L=mItems();
+ if(mi>=L.length)mi=L.length-1;if(mi<0)mi=0;
+ if(edge(0)){const e=L[mi];if(e){e.click();setTimeout(mMark,0)}}
+ if(edge(1))setMenuOpen(false);
+ if(edge(4)||edge(5)){const nav=[...menuPanel.querySelectorAll('nav button')],ai=Math.max(0,nav.findIndex(b=>b.classList.contains('active'))),ni=(ai+(edge(5)?1:nav.length-1))%nav.length;nav[ni].click();mi=ni;mMark()}
+ if(ry&&menuBody)menuBody.scrollTop+=ry*dt*520;
+ mPrev=now;
+}
+// —— gamepad (standard mapping: Xbox / PlayStation / Switch Pro / most pads) ——
+const pad={x:0,y:0,up:0,dn:0,sp:false};let padPrev=[],padSeen=false,padFs=false;const padToast=document.getElementById('padToast');let padToastT=0;
+function toast(m){padToast.textContent=m;padToast.style.opacity=1;clearTimeout(padToastT);padToastT=setTimeout(()=>padToast.style.opacity=0,2400)}
+const PDZ=.18,dz2=(x,y)=>{const m=Math.hypot(x,y);if(m<PDZ)return[0,0];const k=Math.min(1,(m-PDZ)/(1-PDZ))/m;return[x*k,y*k]};
+addEventListener('gamepadconnected',e=>{if(!padSeen){padSeen=true;toast('Controller connected')}});
+addEventListener('gamepaddisconnected',()=>{padSeen=false;toast('Controller disconnected')});
+function pollPad(dt){
+ const list=navigator.getGamepads?navigator.getGamepads():[];let g=null;
+ for(const p of list){if(p&&p.connected){g=p;break}}
+ if(!g){pad.x=pad.y=pad.up=pad.dn=0;pad.sp=false;padPrev=[];return}
+ const bt=i=>{const b=g.buttons[i];return !!b&&(b.pressed||b.value>.5)};
+ const now=g.buttons.map((_,i)=>bt(i)),edge=i=>now[i]&&!padPrev[i];
+ const [lx,ly]=dz2(g.axes[0]||0,g.axes[1]||0),[rx,ry]=dz2(g.axes[2]||0,g.axes[3]||0);
+ const anyIn=now.some(Boolean)||lx||ly||rx||ry;
+ if(!entered){ // controller: A (or Start) presses the Descend button; nothing else does anything yet
+  if((edge(0)||edge(9))&&descBtn&&descBtn.classList.contains('rdy'))descBtn.click();padPrev=now;return}
+ if(anyIn&&!padFs){padFs=true;goFull()}
+ if(anyIn)skipIntro();
+ const menuOpen=menuPanel.classList.contains('open');
+ padMenu(menuOpen,dt,g,now,lx,ly,ry);
+ const dx=(now[15]?1:0)-(now[14]?1:0),dy=(now[12]?1:0)-(now[13]?1:0);
+ pad.x=menuOpen?0:(dx||lx);pad.y=menuOpen?0:(dy||-ly);
+ pad.up=!menuOpen&&now[0]?1:0;pad.dn=!menuOpen&&(now[1]||now[6])?1:0;
+ pad.sp=!menuOpen&&(now[7]||now[5]);
+ if(!menuOpen&&(rx||ry)){az-=rx*dt*2.6;el=Math.min(1.15,Math.max(-.85,el+ry*dt*1.8))}
+ if(edge(9))setMenuOpen(!menuOpen);
+ if(!menuOpen){
+  if(edge(2))toggleCam();
+  if(edge(3))applyPal((palIdx+1)%PAL.length);
+  if(edge(8))document.getElementById('pl').click();
+  if(edge(10)){px=pz=0;py=4.6;vx=vy=vz=0}
+  if(edge(11))shot=true;
+ }
+ padPrev=now;
+}
 const ptrs=new Map();let pinch=0;const LK=COARSE?1.25:1;
 cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});cv.setPointerCapture(e.pointerId);if(ptrs.size===1)drag={x:e.clientX,y:e.clientY};else{drag=null;const[a,b]=[...ptrs.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}});
 cv.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;
@@ -1260,9 +1341,9 @@ function inkUpdate(dt,boosting){
   I.p[i*3]+=I.v[i*3]*dt;I.p[i*3+1]+=I.v[i*3+1]*dt;I.p[i*3+2]+=I.v[i*3+2]*dt;I.v[i*3]*=.985;I.v[i*3+2]*=.985;
   inkTmp.copy(fogCol).lerp(inkCol,Math.min(1,l*1.4));I.c[i*3]=inkTmp.r;I.c[i*3+1]=inkTmp.g;I.c[i*3+2]=inkTmp.b}
  I.g.attributes.position.needsUpdate=true;I.g.attributes.color.needsUpdate=true}
-function frame(now){if(!loaderGone&&performance.now()-LOAD_T0>LOAD_MS){loaderGone=true;loaderEl.classList.add('gone');setTimeout(()=>loaderEl.remove(),1500)}
+function frame(now){if(!loaderGone&&entered&&performance.now()-LOAD_T0>LOAD_MS){loaderGone=true;loaderEl.classList.add('gone');setTimeout(()=>loaderEl.remove(),1500)}
 if(!window._sl){window._sl=1;loadStory();updateMapLegend();initQuality()}if(!window._dk){window._dk=1;scene.traverse(o=>{if(o.isPointLight||o.isSpotLight)o.decay=1})}
- const dt=Math.min(.05,(now-last)/1000);last=now;
+ const dt=Math.min(.05,(now-last)/1000);last=now;pollPad(dt);
  // world time always advances; story timeline only when playing
  st+=dt;
  let E=t<4?0:t<8.5?sm((t-4)/4.5):t<14.5?1:t<19?1-sm((t-14.5)/4.5):0;
@@ -1273,16 +1354,16 @@ if(!window._sl){window._sl=1;loadStory();updateMapLegend();initQuality()}if(!win
 
  // === IMPROVED 3D SWIMMING CONTROLS ===
  // Camera-relative horizontal + dedicated vertical + optional look-directed thrust
- const ix=Math.max(-1,Math.min(1,(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+joy.x));
- const iz=Math.max(-1,Math.min(1,(keys.ArrowUp||keys.KeyW?1:0)-(keys.ArrowDown||keys.KeyS?1:0)+joy.y));
- const iy=Math.max(-1,Math.min(1,(keys.KeyQ||keys.Space?1:0)-(keys.KeyE||keys.ControlLeft||keys.ControlRight?1:0)+touchUp-touchDn));
+ const ix=Math.max(-1,Math.min(1,(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+joy.x+pad.x));
+ const iz=Math.max(-1,Math.min(1,(keys.ArrowUp||keys.KeyW?1:0)-(keys.ArrowDown||keys.KeyS?1:0)+joy.y+pad.y));
+ const iy=Math.max(-1,Math.min(1,(keys.KeyQ||keys.Space?1:0)-(keys.KeyE||keys.ControlLeft||keys.ControlRight?1:0)+touchUp-touchDn+pad.up-pad.dn));
 
  // horizontal movement relative to yaw (level plane — no accidental climb)
  const wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
  let mx,mz;
  if(chase){
   // CHASE CAM: left/right steer the octopus, up/down swim forward/back along its heading
-  const sprint0=keys.ShiftLeft||keys.ShiftRight||touchSprint;
+  const sprint0=keys.ShiftLeft||keys.ShiftRight||touchSprint||pad.sp;
   yw-=ix*(Math.abs(iz)<.05?2.4:(sprint0?1.9:1.5))*dt;
   const thr=iz<0?iz*.55:iz;
   mx=Math.sin(yw)*thr;mz=Math.cos(yw)*thr;
@@ -1297,7 +1378,7 @@ if(!window._sl){window._sl=1;loadStory();updateMapLegend();initQuality()}if(!win
  const pitchDead=Math.abs(pitchRaw)>0.22?pitchRaw:0; // ~13° deadzone
  const lookVert=COARSE?0:iz*pitchDead*0.55; // mobile vertical movement is explicit-only
 
- const sprint=keys.ShiftLeft||keys.ShiftRight||touchSprint;
+ const sprint=keys.ShiftLeft||keys.ShiftRight||touchSprint||pad.sp;
  const topH=sprint?26:12.5;
  const topV=sprint?16:8.5;
  const ka=Math.min(1,dt*4.3);
@@ -1545,7 +1626,7 @@ if(!window._sl){window._sl=1;loadStory();updateMapLegend();initQuality()}if(!win
  camClipApply(camPx,camY,camPz,dt);
  cam.lookAt(camPx, camY-0.2, camPz);
  bokeh.position.set(camPx,camY,camPz);bokeh.rotation.y=st*.03;
- sprintK+=(((keys.ShiftLeft||keys.ShiftRight||touchSprint)&&spd>2?1:0)-sprintK)*Math.min(1,dt*3);streaks.style.opacity=(sprintK*.6).toFixed(2);inkUpdate(dt,(keys.ShiftLeft||keys.ShiftRight||touchSprint)&&spd>2.5);if(BL)BL.style.opacity=(.5+.25*sprintK).toFixed(2);streaks.style.transform='rotate('+((st*6)%360).toFixed(1)+'deg) scale('+(1+sprintK*.08).toFixed(3)+')';
+ sprintK+=(((keys.ShiftLeft||keys.ShiftRight||touchSprint||pad.sp)&&spd>2?1:0)-sprintK)*Math.min(1,dt*3);streaks.style.opacity=(sprintK*.6).toFixed(2);inkUpdate(dt,(keys.ShiftLeft||keys.ShiftRight||touchSprint||pad.sp)&&spd>2.5);if(BL)BL.style.opacity=(.5+.25*sprintK).toFixed(2);streaks.style.transform='rotate('+((st*6)%360).toFixed(1)+'deg) scale('+(1+sprintK*.08).toFixed(3)+')';
  // FOV: base + flare + subtle speed squeeze
  cam.fov=38+flare*4-Math.min(2.5,spd*.12)+sprintK*6;cam.updateProjectionMatrix();
  R.render(scene,cam);if(bctx){try{if((bn++&1)===0)bctx.drawImage(cv,0,0,BL.width,BL.height);else dctx.drawImage(cv,0,0,DL.width,DL.height)}catch(e){bctx=null}}if(shot){shot=false;try{const a=document.createElement("a");a.download="clockwork-octopus.png";a.href=cv.toDataURL("image/png");a.click()}catch(e){}const f=document.getElementById("flash");f.style.transition="none";f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition="opacity .5s";f.style.opacity=0})}
